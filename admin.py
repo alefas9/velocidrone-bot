@@ -34,15 +34,23 @@ def cmd_recap(args) -> None:
 
 
 def cmd_week(args) -> None:
-    """Ο admin ορίζει την πίστα της εβδομάδας."""
-    import json
-    from config import WEEKLY_TRACK_FILE
-    data = {"track": args.track, "url": args.url,
-            "set_at": datetime.datetime.now().isoformat()}
-    with open(WEEKLY_TRACK_FILE, "w", encoding="utf-8") as f:
-        json.dump(data, f, ensure_ascii=False, indent=2)
-    print(f"Πίστα εβδομάδας: «{args.track}» -> {args.url}")
-    print("Το bot θα παρακολουθεί αυτόματα αυτή την πίστα σε κάθε σάρωση.")
+    """Ο admin ανακοινώνει την πίστα της εβδομάδας (csv mode - community tracks).
+
+    Χωρίς URL: απλή ανακοίνωση στο Discord. Ο διοργανωτής κάνει export το CSV
+    από το in-game leaderboard και το ρίχνει στον φάκελο tracks/ (ή root).
+    Με URL: ενεργοποιείται και το web mode (μόνο για verified πίστες).
+    """
+    if args.url:
+        import json
+        from config import WEEKLY_TRACK_FILE
+        data = {"track": args.track, "url": args.url,
+                "set_at": datetime.datetime.now().isoformat()}
+        with open(WEEKLY_TRACK_FILE, "w", encoding="utf-8") as f:
+            json.dump(data, f, ensure_ascii=False, indent=2)
+        print(f"Πίστα εβδομάδας (web mode): «{args.track}» -> {args.url}")
+    else:
+        print(f"Πίστα εβδομάδας (csv mode): «{args.track}»")
+        print("Ο διοργανωτής κάνει export το CSV in-game και το ανεβάζει στον φάκελο του NAS.")
     if not args.no_announce:
         from discord_notify import send_discord_message
         send_discord_message(
@@ -83,7 +91,8 @@ def main() -> None:
 
     w = sub.add_parser("week", help="ορισμός πίστας εβδομάδας (admin)")
     w.add_argument("track", help='όνομα πίστας, π.χ. "Bando Track"')
-    w.add_argument("url", help="URL του leaderboard, π.χ. https://www.velocidrone.com/leaderboard/...")
+    w.add_argument("url", nargs="?", default=None,
+                   help="προαιρετικό URL (μόνο verified πίστες) - χωρίς αυτό λειτουργεί με CSV export")
     w.add_argument("--no-announce", action="store_true", help="χωρίς ανακοίνωση στο Discord")
     w.set_defaults(func=cmd_week)
 

@@ -24,7 +24,7 @@ import time
 import requests
 
 from config import WEB_DELAY, WEB_PAGES, WEB_VERSION, REQUEST_TIMEOUT, WEEKLY_TRACK_FILE
-from velocidrone_source import parse_time
+from velocidrone_source import parse_time, classify_model, split_by_class
 
 BASE = "https://www.velocidrone.com"
 
@@ -41,35 +41,6 @@ _session.headers.update(HEADERS)
 NAME_ALIASES = ["name", "pilot", "player", "username"]
 TIME_ALIASES = ["time", "lap", "best", "result", "score"]
 MODEL_ALIASES = ["model", "quad", "drone", "aircraft"]
-
-# Χάρτης μοντέλων -> κλάση. Πρόσθεσε/διόρθωσε ό,τι χρησιμοποιεί η ομάδα σου.
-# Το bot κάνει case-insensitive substring match: αν το μοντέλο ΠΕΡΙΕΧΕΙ το
-# κλειδί, ανήκει στην κλάση. Ό,τι δεν ταιριάζει -> "other".
-CLASS_MAP = {
-    "5inch": ["tbs", "five33", "5 inch", '5"', "astrox", "drl racer", "spec"],
-    "whoop": ["newbeedrone", "tinyhawk", "whoop", "mobula", "meteor", "micro"],
-}
-CLASS_LABELS = {"5inch": "🏁 5 Inch", "whoop": "🐝 Whoop", "other": "🛠️ Άλλο"}
-
-
-def classify_model(model: str) -> str:
-    m = (model or "").lower()
-    for cls, keys in CLASS_MAP.items():
-        for k in keys:
-            if k in m:
-                return cls
-    return "other"
-
-
-def split_by_class(entries: list) -> dict:
-    """{class: [entries...]} - κάθε κλάση με το δικό της ταξινομημένο leaderboard."""
-    classes = {}
-    for e in entries:
-        classes.setdefault(e.get("class", "other"), []).append(e)
-    for lst in classes.values():
-        lst.sort(key=lambda x: x["time"])
-    return classes
-
 
 # ---------------------------------------------------------------- fetch
 

@@ -21,6 +21,38 @@ import sys
 
 NAME_ALIASES = ["name", "pilot", "player", "user", "username", "pilot name"]
 TIME_ALIASES = ["time", "lap time", "best time", "best lap", "score", "result"]
+MODEL_ALIASES = ["model", "model name", "quad", "drone", "aircraft"]
+
+# Χάρτης μοντέλων -> κλάση (case-insensitive substring match).
+# Ό,τι δεν ταιριάζει -> "other". Πρόσθεσε ελεύθερα τα μοντέλα της ομάδας σου.
+CLASS_MAP = {
+    "5inch": ["tbs", "five33", "lightswitch", "switchback", "oblivion",
+              "flipmode", "bahamut", "drl", "astrox", "spec"],
+    "whoop": ["newbeedrone", "tinyhawk", "whoop", "mobula", "meteor",
+              "acropee", "micro", "betafpv"],
+    "3inch": ["twig", '3"', "3 inch"],
+}
+CLASS_LABELS = {"5inch": "🏁 5 Inch", "whoop": "🐝 Whoop",
+                "3inch": "🌀 3 Inch", "other": "🛠️ Άλλο"}
+
+
+def classify_model(model: str) -> str:
+    m = (model or "").lower()
+    for cls, keys in CLASS_MAP.items():
+        for k in keys:
+            if k in m:
+                return cls
+    return "other"
+
+
+def split_by_class(entries: list) -> dict:
+    """{class: [entries...]} - κάθε κλάση με το δικό της ταξινομημένο leaderboard."""
+    classes = {}
+    for e in entries:
+        classes.setdefault(e.get("class", "other"), []).append(e)
+    for lst in classes.values():
+        lst.sort(key=lambda x: x["time"])
+    return classes
 
 
 def _norm_col(col: str) -> str:
@@ -51,7 +83,8 @@ def _find_column(fieldnames, aliases):
 
 def parse_leaderboard_csv(path: str) -> list:
     """
-    Επιστρέφει ταξινομημένη λίστα: [{"pilot": "...", "time": 83.456}, ...]
+    Επιστρέφει ταξινομημένη λίστα: [{"pilot": "...", "time": 83.456,
+    "model": "...", "class": "5inch"/"whoop"/...}, ...]
     """
     with open(path, "r", encoding="utf-8-sig", newline="") as f:
         sample = f.read(4096)
@@ -79,6 +112,8 @@ def parse_leaderboard_csv(path: str) -> list:
         # Fallback: υπόθεσε 2 στήλες (pilot, time)
         header_idx, name_col, time_col = 0, 0, 1
 
+    model_col = _find_column(rows[header_idx], MODEL_ALIASES)
+
     entries = []
     for row in rows[header_idx + 1:]:
         if len(row) <= max(name_col, time_col):
@@ -88,9 +123,13 @@ def parse_leaderboard_csv(path: str) -> list:
         if not pilot or not raw_time:
             continue
         try:
-            entries.append({"pilot": pilot, "time": parse_time(raw_time)})
+            e = {"pilot": pilot, "time": parse_time(raw_time)}
         except ValueError:
             continue
+        if model_col is not None and len(row) > model_col:
+            e["model"] = row[model_col].strip()
+            e["class"] = classify_model(e["model"])
+        entries.append(e)
 
     entries.sort(key=lambda e: e["time"])
     return entries

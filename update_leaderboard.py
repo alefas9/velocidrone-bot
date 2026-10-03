@@ -44,6 +44,13 @@ def load_tracks(tracks_dir: str, source: str) -> dict:
     return load_all_tracks(tracks_dir)
 
 
+def _entry_key(entry: dict) -> str:
+    """Μοναδικό κλειδί εγγραφής: πιλότος (+μοντέλο αν υπάρχει).
+    Ο ίδιος πιλότος με διαφορετικά quads = ξεχωριστές εγγραφές."""
+    model = entry.get("model")
+    return f"{entry['pilot']}|{model}" if model else entry["pilot"]
+
+
 def _class_label(cls: str) -> str:
     try:
         from velocidrone_web import CLASS_LABELS
@@ -52,16 +59,17 @@ def _class_label(cls: str) -> str:
         return cls
 
 
-def announce_record(track, pilot, new_time, is_new_top, entries, cls=None):
+def announce_record(track, pilot, new_time, is_new_top, entries, cls=None, model=None):
     """Real-time ανακοίνωση νέου ρεκόρ (features #1, #3)."""
     category = get_category(track)
     category_label = themed_day_label(category) if category != "uncategorized" else ""
     crown = "🏆 ΝΕΟ ΚΟΡΥΦΑΙΟ ΡΕΚΟΡ! " if is_new_top else "🚁 Νέο προσωπικό ρεκόρ! "
     cls_label = f"[{_class_label(cls)}] " if cls else ""
+    model_txt = f" ({model})" if model else ""
 
     send_discord_embed(
         title=f"{crown}{cls_label}«{track}» {category_label}".strip(),
-        description=f"**{pilot}** -> **{new_time:.3f}s**",
+        description=f"**{pilot}**{model_txt} -> **{new_time:.3f}s**",
         fields=format_leaderboard_discord_embed_fields(entries, top_n=TOP_N),
     )
 
@@ -81,38 +89,41 @@ def scan_once(tracks_dir: str = TRACKS_DIR, source: str = "auto") -> None:
         if not known:
             # Πρώτο import του track -> σιωπηλή καταγραφή (όχι spam 15 posts μαζί)
             for e in entries:
-                db.set_best(state, track, e["pilot"], e["time"])
-            print(f"  + «{track}»: πρώτο import, {len(entries)} πιλότοι (σιωπηλό).")
+                db.set_best(state, track, _entry_key(e), e["time"], e.get("class"))
+            print(f"  + «{track}»: πρώτο import, {len(entries)} εγγραφές (σιωπηλό).")
             continue
 
         # Χωρισμός ανά κλάση (5inch/whoop) αν το source δίνει μοντέλα
         try:
-            from velocidrone_web import split_by_class
+            from velocidrone_source import split_by_class
             groups = split_by_class(entries) if any("class" in e for e in entries) else {None: entries}
         except ImportError:
             groups = {None: entries}
 
-        best_known = dict(known)
+        improved = {}
         for entry in entries:
             pilot, t = entry["pilot"], entry["time"]
-            old = best_known.get(pilot)
+            cls = entry.get("class") or ""
+            old = known.get(cls, {}).get(_entry_key(entry))
             if old is not None and t >= old:
                 continue  # όχι βελτίωση
 
-            cls = entry.get("class")
-            group = groups.get(cls, entries)
+            group = groups.get(cls) or groups.get(None) or entries
             # κορυφαίο ρεκόρ = #1 ΜΕΣΑ στην κλάση του (5inch/whoop ξεχωριστά)
-            is_new_top = group and group[0]["pilot"] == pilot and t <= group[0]["time"] + 1e-9
-            announce_record(track, pilot, t, is_new_top, group, cls)
-            db.set_best(state, track, pilot, t)
+            is_new_top = bool(group) and group[0]["pilot"] == pilot and t <= group[0]["time"] + 1e-9
+            announce_record(track, pilot, t, is_new_top, group, cls or None, entry.get("model"))
+            db.set_best(state, track, _entry_key(entry), t, cls)
             db.log_record(state, pilot, track, t, today)
             update_duel_times(track_name=track, pilot_name=pilot, new_time=t)
-            best_known[pilot] = t
+            improved[cls] = improved.get(cls, 0) + 1
 
+        # Teaser ΜΟΝΟ αν υπήρξε βελτίωση σε αυτή την κλάση αυτή τη σάρωση
+        # (αλλιώς θα σπάμμαρε το ίδιο μήνυμα κάθε 5 λεπτά)
         for cls, group in groups.items():
-            teaser = proximity_teaser(group)
-            if teaser:
-                send_discord_message(teaser)
+            if improved.get(cls or None) or improved.get(cls):
+                teaser = proximity_teaser(group)
+                if teaser:
+                    send_discord_message(teaser)
 
     db.save_state(state)
 
