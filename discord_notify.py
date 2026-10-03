@@ -4,6 +4,7 @@ discord_notify.py
 Στέλνει μηνύματα και embeds σε Discord channel μέσω Webhook.
 Αν δεν έχει οριστεί DISCORD_WEBHOOK_URL, τυπώνει στο console (χρήσιμο για testing).
 """
+from __future__ import annotations
 
 import requests
 

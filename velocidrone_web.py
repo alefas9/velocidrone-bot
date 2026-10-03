@@ -14,6 +14,7 @@ velocidrone_web.py
 
 Αν το site αλλάξει μορφή:  python velocidrone_web.py --probe <URL>
 """
+from __future__ import annotations
 
 import json
 import os
