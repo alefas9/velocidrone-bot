@@ -7,6 +7,7 @@ leaderboard_format.py
 
 Δεν χρειάζεται καμία νέα βιβλιοθήκη - μόνο python builtin.
 """
+from __future__ import annotations
 
 MEDALS = {1: "🥇", 2: "🥈", 3: "🥉"}
 
