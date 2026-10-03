@@ -1,0 +1,150 @@
+"""
+update_leaderboard.py
+
+ΤΟ ΚΥΡΙΟ SCRIPT - το δέσιμο όλων των κομματιών.
+
+Τρόποι χρήσης:
+  python update_leaderboard.py --once          # μία σάρωση τώρα (για cron/manual)
+  python update_leaderboard.py --loop 300      # συνεχές polling κάθε 300s
+  python update_leaderboard.py --once --demo   # δοκιμή με τα demo CSV (χωρίς Velocidrone)
+
+Flow:
+  1. Διαβάζει τα CSV leaderboards από το TRACKS_DIR
+  2. Συγκρίνει με το state.json -> βρίσκει νέες βελτιώσεις χρόνων
+  3. Για κάθε βελτίωση: Discord ανακοίνωση (embed) - teaser/duel ανά track
+  4. Καλεί τα daily extras (duels που έληξαν)
+  Πρώτη φορά που βλέπει ένα track: σιωπηλό import (χωρίς spam).
+
+Πηγές δεδομένων (--source):
+  web  : αυτόματο polling του velocidrone.com (TRACK_URLS/SCENERY_IDS στο .env)
+  csv  : χειροκίνητα CSV exports στον φάκελο tracks/
+  auto : web αν έχει οριστεί TRACK_URLS/SCENERY_IDS, αλλιώς csv (default)
+"""
+
+import argparse
+import datetime
+import time
+
+from config import TRACKS_DIR, TOP_N
+import db
+from discord_notify import send_discord_message, send_discord_embed
+from leaderboard_format import format_leaderboard_discord_embed_fields, proximity_teaser
+from duels import update_duel_times, check_expired_duels
+from track_categories import get_category, themed_day_label
+from velocidrone_source import load_all_tracks
+from config import TRACK_URLS, SCENERY_IDS
+
+
+def load_tracks(tracks_dir: str, source: str) -> dict:
+    """Επιλογή πηγής: web (αυτόματο) ή csv (χειροκίνητα exports)."""
+    use_web = source == "web" or (source == "auto" and (TRACK_URLS or SCENERY_IDS))
+    if use_web:
+        from velocidrone_web import load_all_tracks_web
+        return load_all_tracks_web()
+    return load_all_tracks(tracks_dir)
+
+
+def _class_label(cls: str) -> str:
+    try:
+        from velocidrone_web import CLASS_LABELS
+        return CLASS_LABELS.get(cls, cls)
+    except ImportError:
+        return cls
+
+
+def announce_record(track, pilot, new_time, is_new_top, entries, cls=None):
+    """Real-time ανακοίνωση νέου ρεκόρ (features #1, #3)."""
+    category = get_category(track)
+    category_label = themed_day_label(category) if category != "uncategorized" else ""
+    crown = "🏆 ΝΕΟ ΚΟΡΥΦΑΙΟ ΡΕΚΟΡ! " if is_new_top else "🚁 Νέο προσωπικό ρεκόρ! "
+    cls_label = f"[{_class_label(cls)}] " if cls else ""
+
+    send_discord_embed(
+        title=f"{crown}{cls_label}«{track}» {category_label}".strip(),
+        description=f"**{pilot}** -> **{new_time:.3f}s**",
+        fields=format_leaderboard_discord_embed_fields(entries, top_n=TOP_N),
+    )
+
+
+def scan_once(tracks_dir: str = TRACKS_DIR, source: str = "auto") -> None:
+    state = db.load_state()
+    today = datetime.date.today().isoformat()
+    tracks = load_tracks(tracks_dir, source)
+
+    if not tracks:
+        print(f"[{datetime.datetime.now():%H:%M:%S}] Δεν βρέθηκαν CSV στο '{tracks_dir}'.")
+    else:
+        print(f"[{datetime.datetime.now():%H:%M:%S}] Σάρωση {len(tracks)} tracks...")
+
+    for track, entries in tracks.items():
+        known = state["tracks"].get(track)
+        if not known:
+            # Πρώτο import του track -> σιωπηλή καταγραφή (όχι spam 15 posts μαζί)
+            for e in entries:
+                db.set_best(state, track, e["pilot"], e["time"])
+            print(f"  + «{track}»: πρώτο import, {len(entries)} πιλότοι (σιωπηλό).")
+            continue
+
+        # Χωρισμός ανά κλάση (5inch/whoop) αν το source δίνει μοντέλα
+        try:
+            from velocidrone_web import split_by_class
+            groups = split_by_class(entries) if any("class" in e for e in entries) else {None: entries}
+        except ImportError:
+            groups = {None: entries}
+
+        best_known = dict(known)
+        for entry in entries:
+            pilot, t = entry["pilot"], entry["time"]
+            old = best_known.get(pilot)
+            if old is not None and t >= old:
+                continue  # όχι βελτίωση
+
+            cls = entry.get("class")
+            group = groups.get(cls, entries)
+            # κορυφαίο ρεκόρ = #1 ΜΕΣΑ στην κλάση του (5inch/whoop ξεχωριστά)
+            is_new_top = group and group[0]["pilot"] == pilot and t <= group[0]["time"] + 1e-9
+            announce_record(track, pilot, t, is_new_top, group, cls)
+            db.set_best(state, track, pilot, t)
+            db.log_record(state, pilot, track, t, today)
+            update_duel_times(track_name=track, pilot_name=pilot, new_time=t)
+            best_known[pilot] = t
+
+        for cls, group in groups.items():
+            teaser = proximity_teaser(group)
+            if teaser:
+                send_discord_message(teaser)
+
+    db.save_state(state)
+
+    # Daily extras (duels που έληξαν) - ακίνδυνο να τρέχει σε κάθε σάρωση
+    for announcement in check_expired_duels():
+        send_discord_message(announcement)
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser(description="Velocidrone -> Discord leaderboard bot")
+    parser.add_argument("--once", action="store_true", help="μία σάρωση και τέλος")
+    parser.add_argument("--loop", type=int, metavar="SECONDS",
+                        help="συνεχές polling κάθε N δευτερόλεπτα")
+    parser.add_argument("--demo", action="store_true",
+                        help="χρήση των demo_data αντί για TRACKS_DIR")
+    parser.add_argument("--source", choices=["auto", "web", "csv"], default="auto",
+                        help="πηγή δεδομένων (default: auto)")
+    args = parser.parse_args()
+
+    tracks_dir = "demo_data" if args.demo else TRACKS_DIR
+
+    if args.loop and not args.once:
+        print(f"Polling κάθε {args.loop}s από '{tracks_dir}' [{args.source}] (Ctrl+C για τερματισμό)")
+        try:
+            while True:
+                scan_once(tracks_dir, args.source)
+                time.sleep(args.loop)
+        except KeyboardInterrupt:
+            print("Τερματισμός.")
+    else:
+        scan_once(tracks_dir, args.source)
+
+
+if __name__ == "__main__":
+    main()
