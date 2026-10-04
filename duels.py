@@ -109,9 +109,11 @@ def check_expired_duels() -> list:
         elif tb is None:
             msg = f"🏆 Ο/Η {a} κερδίζει το duel εναντίον του/της {b} στο «{duel['track']}» (ο/η {b} δεν έβαλε χρόνο)!"
         elif ta < tb:
-            msg = f"🏆 Ο/Η {a} κερδίζει το duel εναντίον του/της {b} στο «{duel['track']}»! {ta:.3f}s vs {tb:.3f}s"
+            from messages import DUEL_WIN, pick
+            msg = pick(DUEL_WIN).format(a=a, b=b, track=duel['track'], ta=ta, tb=tb)
         else:
-            msg = f"🏆 Ο/Η {b} κερδίζει το duel εναντίον του/της {a} στο «{duel['track']}»! {tb:.3f}s vs {ta:.3f}s"
+            from messages import DUEL_WIN, pick
+            msg = pick(DUEL_WIN).format(a=b, b=a, track=duel['track'], ta=tb, tb=ta)
 
         announcements.append(msg)
         duel["resolved"] = True

@@ -83,16 +83,60 @@ def _class_label(cls: str) -> str:
 
 
 def announce_record(track, pilot, new_time, is_new_top, entries, cls=None, model=None):
-    """Real-time ανακοίνωση νέου ρεκόρ (features #1, #3)."""
+    """Real-time ανακοίνωση νέου ρεκόρ με ποικιλία μηνυμάτων (engagement!)."""
+    import random
+    from messages import NEW_TOP, PERSONAL, CALL_TO_ACTION, pick
+
     category = get_category(track)
     category_label = themed_day_label(category) if category != "uncategorized" else ""
-    crown = "🏆 ΝΕΟ ΚΟΡΥΦΑΙΟ ΡΕΚΟΡ! " if is_new_top else "🚁 Νέο προσωπικό ρεκόρ! "
+    cls_label = f"[{_class_label(cls)}] " if cls else ""
+
+    base = pick(NEW_TOP if is_new_top else PERSONAL).format(
+        pilot=f"**{pilot}**", track=track, time=new_time)
+    if random.random() < 0.4:   # 40% πιθανότητα για κρεσέντα engagement
+        base += "\n" + pick(CALL_TO_ACTION)
+
+    send_discord_embed(
+        title=f"{cls_label}«{track}» {category_label}".strip(),
+        description=base,
+        fields=format_leaderboard_discord_embed_fields(entries, top_n=TOP_N),
+    )
+
+
+def _entry_key(entry: dict) -> str:
+    """Μοναδικό κλειδί εγγραφής: πιλότος (+μοντέλο/model_id αν υπάρχει).
+    Ο ίδιος πιλότος με διαφορετικά quads = ξεχωριστές εγγραφές."""
+    model = entry.get("model") or entry.get("model_id")
+    return f"{entry['pilot']}|{model}" if model is not None else entry["pilot"]
+
+
+def _class_label(cls: str) -> str:
+    try:
+        from velocidrone_web import CLASS_LABELS
+        return CLASS_LABELS.get(cls, cls)
+    except ImportError:
+        return cls
+
+
+def announce_record(track, pilot, new_time, is_new_top, entries, cls=None, model=None):
+    """Real-time ανακοίνωση νέου ρεκόρ με ποικιλία μηνυμάτων (engagement!)."""
+    import random
+    from messages import NEW_TOP, PERSONAL, CALL_TO_ACTION, pick
+
+    category = get_category(track)
+    category_label = themed_day_label(category) if category != "uncategorized" else ""
     cls_label = f"[{_class_label(cls)}] " if cls else ""
     model_txt = f" ({model})" if model else ""
 
+    base = pick(NEW_TOP if is_new_top else PERSONAL).format(
+        pilot=pilot, track=track, time=new_time)
+    # 40% πιθανότητα για κρεσέντα
+    if random.random() < 0.4:
+        base = base + "\n" + pick(CALL_TO_ACTION)
+
     send_discord_embed(
-        title=f"{crown}{cls_label}«{track}» {category_label}".strip(),
-        description=f"**{pilot}**{model_txt} -> **{new_time:.3f}s**",
+        title=f"{cls_label}«{track}» {category_label}".strip() or track,
+        description=base.replace("{pilot}", f"**{pilot}**").replace("{time}", f"**{new_time:.3f}s**") if False else base,
         fields=format_leaderboard_discord_embed_fields(entries, top_n=TOP_N),
     )
 
@@ -107,7 +151,12 @@ def scan_once(tracks_dir: str = TRACKS_DIR, source: str = "auto") -> None:
     else:
         print(f"[{datetime.datetime.now():%H:%M:%S}] Σάρωση {len(tracks)} tracks...")
 
+    from whitelist import filter_entries
     for track, entries in tracks.items():
+        before = len(entries)
+        entries = filter_entries(entries)
+        if before != len(entries):
+            print(f"  «{track}»: whitelist ενεργή ({len(entries)}/{before} εγγραφές είναι μέλη)")
         known = state["tracks"].get(track)
         if not known:
             # Πρώτο import του track -> σιωπηλή καταγραφή (όχι spam 15 posts μαζί)
@@ -142,11 +191,18 @@ def scan_once(tracks_dir: str = TRACKS_DIR, source: str = "auto") -> None:
 
         # Teaser ΜΟΝΟ αν υπήρξε βελτίωση σε αυτή την κλάση αυτή τη σάρωση
         # (αλλιώς θα σπάμμαρε το ίδιο μήνυμα κάθε 5 λεπτά)
+        from messages import TEASER, pick
         for cls, group in groups.items():
             if improved.get(cls or None) or improved.get(cls):
-                teaser = proximity_teaser(group)
+                teaser = proximity_teaser(group, templates=TEASER)
                 if teaser:
                     send_discord_message(teaser)
+
+        # Αυτόματες προτάσεις duels (ντέρμπι που κρατούν μέρες)
+        from duel_suggestions import update_suggestions
+        from messages import DUEL_SUGGEST
+        for s in update_suggestions(track, groups):
+            send_discord_message(pick(DUEL_SUGGEST).format(**s))
 
     db.save_state(state)
 

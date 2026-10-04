@@ -63,11 +63,9 @@ def cmd_week(args) -> None:
         print("Ο διοργανωτής κάνει export το CSV in-game και το ανεβάζει στον φάκελο του NAS.")
     if not args.no_announce:
         from discord_notify import send_discord_message
-        send_discord_message(
-            f"📢 **Πίστα εβδομάδας: «{args.track}»**\n"
-            f"Πετάξτε και ανεβάστε τους χρόνους σας! (Auto Leaderboard Upload: ON)\n"
-            f"Καλή επιτυχία! 🚁"
-        )
+        from messages import WEEK_ANNOUNCE, pick
+        send_discord_message(pick(WEEK_ANNOUNCE).format(track=args.track) + "\n"
+                             "(Auto Leaderboard Upload: ON)")
 
 
 def cmd_week_clear(args) -> None:

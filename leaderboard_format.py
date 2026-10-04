@@ -40,7 +40,7 @@ def format_leaderboard_discord_embed_fields(entries: list, top_n: int = 10) -> l
     return fields
 
 
-def proximity_teaser(entries: list, chaser_rank_threshold: int = 5) -> str | None:
+def proximity_teaser(entries: list, chaser_rank_threshold: int = 5, templates: list | None = None) -> str | None:
     """
     Ελέγχει αν κάποιος μέσα στις πρώτες `chaser_rank_threshold` θέσεις είναι πολύ κοντά
     στον επόμενο από πάνω του, και επιστρέφει ένα "teaser" μήνυμα. Αν δεν υπάρχει κάτι
@@ -72,6 +72,11 @@ def proximity_teaser(entries: list, chaser_rank_threshold: int = 5) -> str | Non
         return None
 
     leader, chaser, leader_rank = best_pair
+    if templates:
+        from messages import pick
+        return pick(templates).format(
+            chaser=chaser["pilot"], leader=leader["pilot"],
+            gap=best_gap, pos=leader_rank, track="")
     if leader_rank == 1:
         return f"⚡ {chaser['pilot']} χρειάζεται μόνο {best_gap:.3f}s για να πάρει το #1 από τον/την {leader['pilot']}!"
     else:

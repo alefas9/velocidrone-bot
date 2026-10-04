@@ -53,7 +53,8 @@ class RaceTracker:
         if action == "start":
             self.reset()
             self.started = True
-            send_discord_message("🚦 **Ο αγώνας ξεκίνησε!** Καλή τύχη πιλότοι! 🚁")
+            from messages import RACE_START, pick
+            send_discord_message(pick(RACE_START))
         elif action == "abort":
             self.reset()
             send_discord_message("⛔ Ο αγώνας ματαιώθηκε.")
@@ -100,8 +101,13 @@ class RaceTracker:
             fields.append({"name": f"{medal} {r['pilot']}",
                            "value": f"{r['time']:.3f}s{extra}", "inline": True})
         winner = res[0]
+        from messages import RACE_FINISH_TITLE, RACE_FINISH_CTA, pick
+        import random
+        desc = pick(RACE_FINISH_CTA) if random.random() < 0.35 else ""
         send_discord_embed(
-            title=f"🏁 Αποτελέσματα αγώνα — 🏆 {winner['pilot']} {winner['time']:.3f}s",
+            title=pick(RACE_FINISH_TITLE).format(
+                winner=winner["pilot"], time=winner["time"]),
+            description=desc,
             fields=fields,
         )
         teaser = proximity_teaser([{"pilot": r["pilot"], "time": r["time"]} for r in res])
@@ -136,7 +142,9 @@ def on_close(ws, code, msg):
 
 def on_open(ws):
     print("[ws] συνδέθηκα στο Velocidrone ✓")
-    send_discord_message("✅ Το bot συνδέθηκε με το Velocidrone!") if os.environ.get("WS_ANNOUNCE") else None
+    if os.environ.get("WS_ANNOUNCE"):
+        from messages import WS_CONNECTED, pick
+        send_discord_message(pick(WS_CONNECTED))
 
 
 def main():
