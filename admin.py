@@ -78,6 +78,25 @@ def cmd_week_clear(args) -> None:
     print("Η πίστα εβδομάδας καθαρίστηκε.")
 
 
+def cmd_whitelist(args) -> None:
+    import whitelist as wlm
+    if args.action == "add":
+        added = wlm.add(args.names)
+        print(f"Προστέθηκαν {added} μέλη. Σύνολο: {len(wlm.load())}")
+    elif args.action == "remove":
+        removed = wlm.remove(args.names)
+        print(f"Αφαιρέθηκαν {removed}. Σύνολο: {len(wlm.load())}")
+    else:
+        rows = wlm.members()
+        if rows:
+            print(f"Whitelist ({len(rows)} μέλη) - αρχείο: whitelist.csv")
+            print(f"  {'ΟΝΟΜΑ':<18} {'DISCORD':<18} {'ΚΛΑΣΗ'}")
+            for r in rows:
+                print(f"  {r['name']:<18} {r.get('discord',''):<18} {r.get('class','')}")
+        else:
+            print("Whitelist άδεια -> όλοι οι πιλότοι ορατοί.")
+
+
 def cmd_category(args) -> None:
     import track_categories as tc
     tc.TRACK_CATEGORIES[args.track] = args.category
@@ -112,6 +131,11 @@ def main() -> None:
 
     wc = sub.add_parser("week-clear", help="καθαρισμός πίστας εβδομάδας")
     wc.set_defaults(func=cmd_week_clear)
+
+    wl = sub.add_parser("whitelist", help="διαχείριση μελών κοινότητας")
+    wl.add_argument("action", choices=["add", "remove", "list"])
+    wl.add_argument("names", nargs="*", help="ονόματα πιλότων (όπως στο Velocidrone)")
+    wl.set_defaults(func=cmd_whitelist)
 
     c = sub.add_parser("category", help="tag track σε κατηγορία")
     c.add_argument("track"); c.add_argument("category")
