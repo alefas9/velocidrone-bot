@@ -50,8 +50,11 @@ BLOCK = 16
 # model_id -> κλάση. Γέμισέ το όσο μαθαίνεις τα ids (βλ. README "Model ID map").
 # Επιβεβαιωμένα από σταύρωση CSV+API: 55=TBS Spec (5"), 59=Five33 Switchback (5")
 MODEL_ID_CLASSES = {
-    55: "5inch",
-    59: "5inch",
+    55: "5inch",    # TBS Spec
+    59: "5inch",    # Five33 Switchback
+    108: "5inch",   # LightSwitch
+    66: "3inch",    # Twig XL 3
+    # 123 = το πιο συνηθισμένο (Bahamut;) - μαθαίνεται, βλ. README
 }
 
 

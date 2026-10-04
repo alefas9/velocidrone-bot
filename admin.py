@@ -40,7 +40,17 @@ def cmd_week(args) -> None:
     από το in-game leaderboard και το ρίχνει στον φάκελο tracks/ (ή root).
     Με URL: ενεργοποιείται και το web mode (μόνο για verified πίστες).
     """
-    if args.url:
+    if args.track_id:
+        import json
+        from config import WEEKLY_TRACK_FILE
+        data = {"track": args.track, "track_id": int(args.track_id),
+                "race_mode": int(args.race_mode),
+                "set_at": datetime.datetime.now().isoformat()}
+        with open(WEEKLY_TRACK_FILE, "w", encoding="utf-8") as f:
+            json.dump(data, f, ensure_ascii=False, indent=2)
+        print(f"Πίστα εβδομάδας (API mode): «{args.track}» id={args.track_id} race_mode={args.race_mode}")
+        print("Το bot θα τραβάει αυτόματα τους χρόνους κάθε 5 λεπτά - κανένα CSV!")
+    elif args.url:
         import json
         from config import WEEKLY_TRACK_FILE
         data = {"track": args.track, "url": args.url,
@@ -93,6 +103,10 @@ def main() -> None:
     w.add_argument("track", help='όνομα πίστας, π.χ. "Bando Track"')
     w.add_argument("url", nargs="?", default=None,
                    help="προαιρετικό URL (μόνο verified πίστες) - χωρίς αυτό λειτουργεί με CSV export")
+    w.add_argument("--track-id", type=int, default=None,
+                   help="Velocidrone track id (API mode - αυτόματο, για ΟΛΕΣ τις πίστες)")
+    w.add_argument("--race-mode", type=int, default=6,
+                   help="race mode (default 6 = single class 3 laps)")
     w.add_argument("--no-announce", action="store_true", help="χωρίς ανακοίνωση στο Discord")
     w.set_defaults(func=cmd_week)
 

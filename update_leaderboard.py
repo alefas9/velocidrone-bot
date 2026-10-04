@@ -35,8 +35,31 @@ from velocidrone_source import load_all_tracks
 from config import TRACK_URLS, SCENERY_IDS
 
 
+def _get_weekly():
+    import json, os
+    from config import WEEKLY_TRACK_FILE
+    if os.path.exists(WEEKLY_TRACK_FILE):
+        with open(WEEKLY_TRACK_FILE, encoding="utf-8") as f:
+            return json.load(f)
+    return None
+
+
 def load_tracks(tracks_dir: str, source: str) -> dict:
-    """Επιλογή πηγής: web (αυτόματο) ή csv (χειροκίνητα exports)."""
+    """Επιλογή πηγής: api (Velocidrone Open API) > web > csv."""
+    weekly = _get_weekly()
+    if source in ("auto", "api") and weekly and weekly.get("track_id"):
+        from velocidrone_api import fetch_leaderboard
+        track_id = int(weekly["track_id"])
+        race_mode = int(weekly.get("race_mode", 6))
+        try:
+            entries = fetch_leaderboard(track_id, race_mode=race_mode)
+        except Exception as e:
+            print(f"  ! API σφάλμα ({e}) - θα ξαναδοκιμάσει στην επόμενη σάρωση")
+            return {}
+        if entries:
+            return {weekly["track"]: entries}
+        print(f"  ! «{weekly['track']}»: κενό leaderboard")
+        return {}
     use_web = source == "web" or (source == "auto" and (TRACK_URLS or SCENERY_IDS))
     if use_web:
         from velocidrone_web import load_all_tracks_web
@@ -45,10 +68,10 @@ def load_tracks(tracks_dir: str, source: str) -> dict:
 
 
 def _entry_key(entry: dict) -> str:
-    """Μοναδικό κλειδί εγγραφής: πιλότος (+μοντέλο αν υπάρχει).
+    """Μοναδικό κλειδί εγγραφής: πιλότος (+μοντέλο/model_id αν υπάρχει).
     Ο ίδιος πιλότος με διαφορετικά quads = ξεχωριστές εγγραφές."""
-    model = entry.get("model")
-    return f"{entry['pilot']}|{model}" if model else entry["pilot"]
+    model = entry.get("model") or entry.get("model_id")
+    return f"{entry['pilot']}|{model}" if model is not None else entry["pilot"]
 
 
 def _class_label(cls: str) -> str:
