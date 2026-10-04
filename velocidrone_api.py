@@ -1,88 +1,167 @@
 """
 velocidrone_api.py
 
-ΠΗΓΗ ΜΕΛΛΟΝ: Velocidrone Open API με bearer token - ΠΛΗΡΩΣ ΑΥΤΟΜΑΤΟ
-για ΟΛΕΣ τις πίστες συμπεριλαμβανομένων των community/custom.
+ΕΠΙΣΗΜΟ Velocidrone API client - ΠΛΗΡΩΣ ΑΥΤΟΜΑΤΟ για ΟΛΕΣ τις πίστες
+(official + community/custom), χωρίς CSV, χωρίς webhook-scraping.
 
-Υπόθεση λειτουργίας (όπως το κάνει το FPVBattle - github.com/UaVelocidroneBattle/FPVBattle):
-  - Ο χρήστης παίρνει bearer token από το velocidrone.com (profile / devs / FB group)
-  - Το API επιστρέφει leaderboard ενός track σε JSON
-  - Το bot το σκανάρει κάθε 5 λεπτά -> πλήρως αυτόματο, χωρίς CSV exports
+Πηγή ανακάλυψης endpoints/κρυπτογράφησης: opensource project FPVBattle
+(github.com/UaVelocidroneBattle/FPVBattle - Veloci.Logic/API/Velocidrone.cs,
+Services/Encryption.cs) - AES-128-ECB/PKCS7 με κλειδί "BatCaveGGevaCtaB".
 
-ΚΑΤΑΣΤΑΣΗ: τα public docs του API δεν είναι δημοσιευμένα - αυτό το module
-έχει probe mode για να ανακαλύψουμε τα endpoints όταν πάρουμε token:
+Δύο τρόποι λειτουργίας:
+1) SIM MODE (χωρίς token) - αναπαράγει ακριβώς τι στέλνει το sim:
+     POST https://velocidrone.co.uk/api/leaderboard/getLeaderBoard
+     body: post_data=<urlencode(base64(AES_ECB(params)))>
+     -> η απάντηση είναι AES-κρυπτογραφημένη, την αποκρυπτογραφούμε
+2) TOKEN MODE (αν ποτέ πάρεις bearer token):
+     POST https://velocidrone.co.uk/api/leaderboard
+     Authorization: Bearer <token>, post_data=<urlencode(plain params)>
+     -> απάντηση καθαρό JSON
 
-  python3 velocidrone_api.py --probe <TRACK_ID>
+Παράμετροι leaderboard: track_id, sim_version, offset, count, race_mode
+(race_mode=6 όπως χρησιμοποιεί το FPVBattle - single class 3 laps)
 
-Δοκιμάζει όλους τους πιθανούς συνδυασμούς base URL / path και τυπώνει τι απαντά
-ο server (status code + πρώτα bytes) - από εκεί κλειδώνουμε το πραγματικό endpoint.
+Χρήση:
+  python3 velocidrone_api.py --probe 2167        # γρήγορη δοκιμή με track id
+  ή από κώδικα: entries = fetch_leaderboard(2167)
 """
 
+import base64
 import json
-import os
 import sys
+import urllib.parse
 
 import requests
 
+try:
+    from Crypto.Cipher import AES
+except ImportError:
+    print("Χρειάζεται: python3 -m pip install pycryptodome")
+    raise
+
 from config import REQUEST_TIMEOUT
 
-TOKEN = os.environ.get("VELOCIDRONE_TOKEN", "").strip()
-BASES = [
-    "https://api.velocidrone.com",
-    "https://www.velocidrone.com/api",
-    "https://www.velocidrone.com/apiv2",
-    "https://www.velocidrone.com/api/v1",
-]
-CANDIDATE_PATHS = [
-    "/leaderboard/{track_id}",
-    "/leaderboards/{track_id}",
-    "/tracks/{track_id}/leaderboard",
-    "/track/{track_id}",
-    "/track/{track_id}/leaderboard",
-    "/leaderboard/{track_id}/All",
-]
+BASE = "https://velocidrone.co.uk"
+KEY = b"BatCaveGGevaCtaB"          # AES-128 (16 bytes) - από FPVBattle Encryption.cs
+TOKEN = ""                          # optional bearer token (token mode)
+
+BLOCK = 16
+
+# model_id -> κλάση. Γέμισέ το όσο μαθαίνεις τα ids (βλ. README "Model ID map").
+# Επιβεβαιωμένα από σταύρωση CSV+API: 55=TBS Spec (5"), 59=Five33 Switchback (5")
+MODEL_ID_CLASSES = {
+    55: "5inch",
+    59: "5inch",
+}
 
 
-def _headers() -> dict:
-    h = {"Accept": "application/json"}
+def _pkcs7_pad(data: bytes) -> bytes:
+    pad = BLOCK - (len(data) % BLOCK)
+    return data + bytes([pad]) * pad
+
+
+def _pkcs7_unpad(data: bytes) -> bytes:
+    pad = data[-1]
+    if pad < 1 or pad > BLOCK:
+        raise ValueError("invalid PKCS7 padding")
+    return data[:-pad]
+
+
+def encrypt(plain: str) -> str:
+    """AES-128-ECB + PKCS7 -> base64 (ίδιο με το Encryption.Encrypt του FPVBattle)."""
+    cipher = AES.new(KEY, AES.MODE_ECB)
+    return base64.b64encode(cipher.encrypt(_pkcs7_pad(plain.encode()))).decode()
+
+
+def decrypt(blob_b64: str) -> str:
+    cipher = AES.new(KEY, AES.MODE_ECB)
+    raw = base64.b64decode(blob_b64)
+    return _pkcs7_unpad(cipher.decrypt(raw)).decode(errors="replace")
+
+
+def build_params(track_id: int, race_mode: int = 6, count: int = 2000,
+                 offset: int = 0, sim_version: str = "1.16",
+                 protected_track_value: int = 2, model_id: int = 59,
+                 quad_class: int = 0) -> str:
+    """Ακριβές format από αποκρυπτογράφηση πραγματικού sim request:
+    track_id=37845&sim_version=1.16&offset=0&count=15&protected_track_value=2
+    &model_id=59&race_mode=6&quad_class=0
+    (model_id/quad_class: πιθανό wildcard=59/0 - θα επιβεβαιωθεί στο probe)"""
+    return (f"track_id={track_id}&sim_version={sim_version}&offset={offset}"
+            f"&count={count}&protected_track_value={protected_track_value}"
+            f"&model_id={model_id}&race_mode={race_mode}&quad_class={quad_class}")
+
+
+def fetch_leaderboard(track_id: int, race_mode: int = 6, **kw) -> list:
+    """Επιστρέφει [{pilot, time, ...}] ή ρίχνει exception με το status."""
+    params = build_params(track_id, race_mode, **kw)
+    headers = {"User-Agent": "UnityPlayer/2021.3.45f2 (UnityWebRequest/1.0, libcurl/8.5.0-DEV)",
+               "X-Unity-Version": "2021.3.45f2"}
+
     if TOKEN:
-        h["Authorization"] = f"Bearer {TOKEN}"
-    return h
+        # TOKEN MODE: καθαρό JSON
+        headers["Authorization"] = f"Bearer {TOKEN}"
+        url = f"{BASE}/api/leaderboard"
+        body = "post_data=" + urllib.parse.quote_plus(params)
+    else:
+        # SIM MODE: κρυπτογραφημένο (όπως το sim)
+        url = f"{BASE}/api/leaderboard/getLeaderBoard"
+        body = "post_data=" + urllib.parse.quote_plus(encrypt(params))
+        headers["Content-Type"] = "application/x-www-form-urlencoded"
+
+    r = requests.post(url, data=body.encode(), headers=headers,
+                      timeout=REQUEST_TIMEOUT)
+
+    # Απάντηση: plaintext JSON ή base64-AES
+    text = r.text.strip()
+    if not r.ok:
+        raise RuntimeError(f"HTTP {r.status_code}: {text[:300]}")
+    if text.startswith("{"):
+        data = json.loads(text)
+    else:
+        try:
+            data = json.loads(decrypt(text))
+        except Exception:
+            data = json.loads(text)   # fallback
+
+    # Πραγματικό format απάντησης (αποκρυπτογραφημένο από live capture):
+    # {"success":true,"tracktimes":[{"lap_time":"30.804","playername":"OutsetFPV",
+    #   "model_id":123,"country":"US","sim_version":"1.16","device_type":0,"user_id":...}]}
+    times = data.get("tracktimes") or []
+    out = []
+    for e in times:
+        try:
+            out.append({
+                "pilot": e["playername"],
+                "time": float(e["lap_time"]),
+                "model_id": e.get("model_id"),
+                "country": e.get("country"),
+                "class": MODEL_ID_CLASSES.get(e.get("model_id"), "other"),
+            })
+        except (KeyError, ValueError, TypeError):
+            continue
+    out.sort(key=lambda x: x["time"])
+    return out
 
 
-def probe(track_id: str) -> None:
-    """Δοκίμασε όλους τους πιθανούς συνδυασμούς και τύπωσε τι απαντά ο server."""
-    if not TOKEN:
-        print("! Δεν έχει οριστεί VELOCIDRONE_TOKEN στο .env")
-        print("  Πρόσθεσέ το και ξανατρέξε.")
+def probe(track_id: int) -> None:
+    print(f"Probe track_id={track_id} ({'token mode' if TOKEN else 'sim mode'})")
+    try:
+        entries = fetch_leaderboard(track_id)
+    except Exception as e:
+        print(f"✗ {e}")
         return
-    print(f"Token: {TOKEN[:12]}... (κρυμμένο)")
-    print(f"Track ID: {track_id}\n")
-    for base in BASES:
-        for path_tpl in CANDIDATE_PATHS:
-            url = base + path_tpl.format(track_id=track_id)
-            try:
-                r = requests.get(url, headers=_headers(), timeout=REQUEST_TIMEOUT)
-            except requests.RequestException as e:
-                print(f"✗ {url}\n    σφάλμα: {e}")
-                continue
-            ct = r.headers.get("Content-Type", "")
-            print(f"{'✓' if r.status_code == 200 else '·'} [{r.status_code}] {url} ({ct})")
-            if r.status_code == 200:
-                print("    ", r.text[:300].replace("\n", " "))
-    print("\nΣτείλε μου ΟΛΟ αυτό το output - από εκεί γράφω το πραγματικό client.")
-
-
-def fetch_track(track_id: str) -> list:
-    """Θα υλοποιηθεί μόλις κλειδώσουμε endpoint από το probe."""
-    raise NotImplementedError(
-        "Το endpoint δεν έχει ακόμα επιβεβαιωθεί. Τρέξε πρώτα: "
-        "python3 velocidrone_api.py --probe <TRACK_ID>"
-    )
+    print(f"✓ {len(entries)} εγγραφές")
+    for e in entries[:15]:
+        print(f"  {e['pilot']:<18} {e['time']:>9.3f}s  model_id={e.get('model_id')} -> {e['class']}")
 
 
 if __name__ == "__main__":
     if len(sys.argv) >= 3 and sys.argv[1] == "--probe":
-        probe(sys.argv[2])
+        probe(int(sys.argv[2]))
     else:
-        print(__doc__)
+        # self-test κρυπτογράφησης (round-trip)
+        p = build_params(2167)
+        assert decrypt(encrypt(p)) == p
+        print("crypto round-trip OK ✓")
+        print("Χρήση: python3 velocidrone_api.py --probe <TRACK_ID>")
