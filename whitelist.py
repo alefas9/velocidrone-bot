@@ -36,17 +36,20 @@ def _read_csv() -> list:
     """Λίστα dicts {name, discord, class} από το csv (αντέχει BOM, κενές γραμμές)."""
     if not os.path.exists(WHITELIST_CSV):
         return []
+    # Η κεφαλίδα αναγνωρίζεται με πολλές λέξει-κλειδιά (ακόμα κι αν τα
+    # έχεις μετονομάσει στα ελληνικά / ταξινομήσει λάθος στο Excel).
+    HEADER_WORDS = ("name", "pilot", "ονομ", "πίλοτ", "player")
     rows = []
     with open(WHITELIST_CSV, encoding="utf-8-sig", newline="") as f:
         reader = csv.reader(f)
-        for i, row in enumerate(reader):
+        for row in reader:
             if not row or not str(row[0]).strip():
                 continue
             first = str(row[0]).strip()
             if first.startswith("#"):
                 continue
-            if i == 0 and first.lower() in ("name", "pilot", "pilotname", "πίλοτος"):
-                continue  # header
+            if any(w in first.lower() for w in HEADER_WORDS):
+                continue  # header (σε οποιαδήποτε γραμμή)
             rows.append({
                 "name": first,
                 "discord": str(row[1]).strip() if len(row) > 1 else "",
