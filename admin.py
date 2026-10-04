@@ -33,6 +33,108 @@ def cmd_recap(args) -> None:
     print(text)
 
 
+def _maybe_award_previous(args) -> None:
+    """Αν υπήρχε προηγούμενη πίστα, απονομή πόντων πριν την αντικατάσταση."""
+    import json, os
+    from config import WEEKLY_TRACK_FILE
+    if getattr(args, "no_award", False):
+        return
+    if not os.path.exists(WEEKLY_TRACK_FILE):
+        return
+    with open(WEEKLY_TRACK_FILE, encoding="utf-8") as f:
+        prev = json.load(f)
+    prev_track = prev.get("track")
+    if not prev_track or prev_track == getattr(args, "track", None):
+        return  # δεν υπήρχε προηγούμενη ή ίδια πίστα
+    import db
+    import points
+    state = db.load_state()
+    if prev_track not in state.get("tracks", {}):
+        print(f"(δεν βρέθηκαν δεδομένα για την προηγούμενη πίστα «{prev_track}» - παράλειψη απονομής)")
+        return
+    results = points.award_week(prev_track, state)
+    if not results:
+        return
+    from discord_notify import send_discord_embed
+    from messages import pick
+    for r in results:
+        lines = [f"{m} **{pl}**  {t:.3f}s  (+{p})" for pl, t, p, m in r["results"]]
+        send_discord_embed(
+            title=f"🏆 Εβδομάδα ολοκληρώθηκε: «{prev_track}» [{r['class']}]",
+            description="\n".join(lines) if lines else "(κενή κατάταξη)",
+        )
+        season_lines = [f"**{i+1}.** {pl} — {p} βαθμοί" for i, (pl, p) in enumerate(r["season"][:10])]
+        send_discord_embed(
+            title=f"📊 Βαθμολογία σεζόν [{r['class']}]",
+            description="\n".join(season_lines),
+            color=0x3498DB,
+        )
+    print(f"Απονεμήθηκαν πόντοι για «{prev_track}» ({len(results)} κλάσεις)")
+
+
+def cmd_standings(args) -> None:
+    import points
+    from discord_notify import send_discord_embed
+    data = points.load_standings()
+    classes = data.get("classes", {})
+    if not classes:
+        print("Κενή βαθμολογία - δεν έχει ολοκληρωθεί καμία εβδομάδα ακόμα.")
+        return
+    for cls, pilots in classes.items():
+        season = sorted(pilots.items(), key=lambda kv: -kv[1]["points"])
+        medals = {0: "🥇", 1: "🥈", 2: "🥉"}
+        lines = [f"{medals.get(i, f'**{i+1}.**')} {pl} — **{d['points']}** βαθμοί "
+                 f"({d['wins']} νίκες, {d['podiums']} podiums)"
+                 for i, (pl, d) in enumerate(season[:15])]
+        send_discord_embed(title=f"📊 Βαθμολογία σεζόν [{cls}]", description="\n".join(lines), color=0x3498DB)
+        print(f"Βαθμολογία [{cls}]: {len(season)} πιλότοι -> Discord")
+
+
+def cmd_award(args) -> None:
+    """Χειροκίνητη απονομή για την ΤΡΕΧΟΥΣΑ πίστα (χωρίς αλλαγή)."""
+    import json, os, db, points
+    from config import WEEKLY_TRACK_FILE
+    if not os.path.exists(WEEKLY_TRACK_FILE):
+        print("Δεν έχει οριστεί πίστα εβδομάδας.")
+        return
+    with open(WEEKLY_TRACK_FILE, encoding="utf-8") as f:
+        weekly = json.load(f)
+    track = weekly.get("track")
+    state = db.load_state()
+    res = points.award_week(track, state)
+    print(f"Απονεμήθηκαν πόντοι για «{track}»: {sum(len(r['results']) for r in res)} εγγραφές")
+
+
+def cmd_standings_reset(args) -> None:
+    import os
+    from config import STATE_FILE  # noqa
+    f = points_standings_file()
+    if os.path.exists(f):
+        os.remove(f)
+    print("Βαθμολογία σεζόν μηδενίστηκε. Νέα σεζόν, καθαρό πεδίο! 🏁")
+
+
+def points_standings_file() -> str:
+    import os
+    return os.environ.get("STANDINGS_FILE", "standings.json")
+
+
+def cmd_model(args) -> None:
+    import velocidrone_api as va
+    if str(args.model_id).lower() == "list" or args.cls is None and not str(args.model_id).isdigit():
+        mapping = va.load_model_classes()
+        inv = {}
+        for mid, cls in sorted(mapping.items()):
+            inv.setdefault(cls, []).append(mid)
+        for cls, ids in inv.items():
+            print(f"  {cls}: {ids}")
+        unknown = args.model_id if hasattr(args, "model_id") else None
+        print("\n(τα ids που ΔΕΝ είναι εδώ βγαίνουν 'other' - πρόσθεσέ τα με: model <id> <class>)")
+    else:
+        va.set_model_class(int(args.model_id), args.cls)
+        print(f"✓ model_id {args.model_id} -> {args.cls} (model_classes.json)")
+
+
 def cmd_week(args) -> None:
     """Ο admin ανακοινώνει την πίστα της εβδομάδας (csv mode - community tracks).
 
@@ -43,6 +145,8 @@ def cmd_week(args) -> None:
     if args.track_id:
         import json
         from config import WEEKLY_TRACK_FILE
+        # Αυτόματο κλείσιμο προηγούμενης εβδομάδας: απονομή πόντων
+        _maybe_award_previous(args)
         data = {"track": args.track, "track_id": int(args.track_id),
                 "race_mode": int(args.race_mode),
                 "set_at": datetime.datetime.now().isoformat()}
@@ -124,11 +228,27 @@ def main() -> None:
                    help="Velocidrone track id (API mode - αυτόματο, για ΟΛΕΣ τις πίστες)")
     w.add_argument("--race-mode", type=int, default=6,
                    help="race mode (default 6 = single class 3 laps)")
+    w.add_argument("--no-award", action="store_true",
+                   help="χωρίς απονομή πόντων προηγούμενης εβδομάδας")
     w.add_argument("--no-announce", action="store_true", help="χωρίς ανακοίνωση στο Discord")
     w.set_defaults(func=cmd_week)
 
     wc = sub.add_parser("week-clear", help="καθαρισμός πίστας εβδομάδας")
     wc.set_defaults(func=cmd_week_clear)
+
+    m = sub.add_parser("model", help="χάρτης model_id -> κλάση (5inch/whoop/...)")
+    m.add_argument("model_id", help="το model_id από το API (π.χ. 123) ή 'list'")
+    m.add_argument("cls", nargs="?", default=None, help="κλάση (5inch/whoop) - μόνο για ορισμό")
+    m.set_defaults(func=cmd_model)
+
+    st = sub.add_parser("standings", help="βαθμολογία σεζόν -> Discord")
+    st.set_defaults(func=cmd_standings)
+
+    aw = sub.add_parser("award", help="απονομή πόντων τρέχουσας πίστας τώρα")
+    aw.set_defaults(func=cmd_award)
+
+    sr = sub.add_parser("standings-reset", help="μηδενισμός βαθμολογίας (νέα σεζόν)")
+    sr.set_defaults(func=cmd_standings_reset)
 
     wl = sub.add_parser("whitelist", help="διαχείριση μελών κοινότητας")
     wl.add_argument("action", choices=["add", "remove", "list"])
