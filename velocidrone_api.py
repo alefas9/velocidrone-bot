@@ -27,6 +27,7 @@ Services/Encryption.cs) - AES-128-ECB/PKCS7 με κλειδί "BatCaveGGevaCtaB"
 """
 
 import base64
+import os
 import json
 import sys
 import urllib.parse
@@ -47,15 +48,47 @@ TOKEN = ""                          # optional bearer token (token mode)
 
 BLOCK = 16
 
-# model_id -> κλάση. Γέμισέ το όσο μαθαίνεις τα ids (βλ. README "Model ID map").
-# Επιβεβαιωμένα από σταύρωση CSV+API: 55=TBS Spec (5"), 59=Five33 Switchback (5")
+# model_id -> κλάση. Επιβεβαιωμένα από σταύρωση CSV+API:
+#   55=TBS Spec (5"), 59=Five33 Switchback (5"), 108=LightSwitch (5"),
+#   66=Twig XL 3 (3" - αν θες μόνο 2 κλάσεις βάλ' το whoop)
+# Επιπλέον mappings στο model_classes.json (δίπλα στα scripts - το γεμίζεις
+# χειροκίνητα ή με: python3 admin.py model 123 whoop)
 MODEL_ID_CLASSES = {
     55: "5inch",    # TBS Spec
     59: "5inch",    # Five33 Switchback
     108: "5inch",   # LightSwitch
     66: "3inch",    # Twig XL 3
-    # 123 = το πιο συνηθισμένο (Bahamut;) - μαθαίνεται, βλ. README
 }
+
+MODEL_CLASSES_FILE = os.environ.get("MODEL_CLASSES_FILE", "model_classes.json")
+
+
+def load_model_classes() -> dict:
+    """Βασικός χάρτης + ό,τι έχεις ορίσει στο model_classes.json."""
+    result = dict(MODEL_ID_CLASSES)
+    if os.path.exists(MODEL_CLASSES_FILE):
+        try:
+            with open(MODEL_CLASSES_FILE, encoding="utf-8") as f:
+                extra = json.load(f)
+            for k, v in extra.items():
+                result[int(k)] = str(v)
+        except (json.JSONDecodeError, OSError, ValueError):
+            pass
+    return result
+
+
+def set_model_class(model_id: int, cls: str) -> None:
+    """Αποθήκευσε mapping (γράφει στο model_classes.json)."""
+    extra = {}
+    if os.path.exists(MODEL_CLASSES_FILE):
+        try:
+            with open(MODEL_CLASSES_FILE, encoding="utf-8") as f:
+                extra = json.load(f)
+        except (json.JSONDecodeError, OSError):
+            extra = {}
+    extra[str(model_id)] = cls
+    with open(MODEL_CLASSES_FILE, "w", encoding="utf-8") as f:
+        json.dump(extra, f, ensure_ascii=False, indent=2)
 
 
 def _pkcs7_pad(data: bytes) -> bytes:
@@ -139,7 +172,7 @@ def fetch_leaderboard(track_id: int, race_mode: int = 6, **kw) -> list:
                 "time": float(e["lap_time"]),
                 "model_id": e.get("model_id"),
                 "country": e.get("country"),
-                "class": MODEL_ID_CLASSES.get(e.get("model_id"), "other"),
+                "class": load_model_classes().get(e.get("model_id"), "other"),
             })
         except (KeyError, ValueError, TypeError):
             continue
@@ -154,8 +187,8 @@ def probe(track_id: int) -> None:
     except Exception as e:
         print(f"✗ {e}")
         return
-    print(f"✓ {len(entries)} εγγραφές")
-    for e in entries[:15]:
+    print(f"✓ {len(entries)} εγγραφές (ολες)")
+    for e in entries:
         print(f"  {e['pilot']:<18} {e['time']:>9.3f}s  model_id={e.get('model_id')} -> {e['class']}")
 
 
