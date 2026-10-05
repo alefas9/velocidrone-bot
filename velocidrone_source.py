@@ -15,6 +15,7 @@ track, ρίχνει το αρχείο στον φάκελο TRACKS_DIR και τ
 
 import csv
 import os
+import os
 import re
 import sys
 
@@ -30,10 +31,9 @@ CLASS_MAP = {
               "flipmode", "bahamut", "drl", "astrox", "spec"],
     "whoop": ["newbeedrone", "tinyhawk", "whoop", "mobula", "meteor",
               "acropee", "micro", "betafpv"],
-    "3inch": ["twig", '3"', "3 inch"],
+    "5inch": ["twig", '3"', "3 inch"],   # 3" -> 5inch (όλοι μαζί προς το παρόν)
 }
-CLASS_LABELS = {"5inch": "🏁 5 Inch", "whoop": "🐝 Whoop",
-                "3inch": "🌀 3 Inch", "other": "🛠️ Άλλο"}
+CLASS_LABELS = {"5inch": "🏁 5 Inch", "whoop": "🐝 Whoop"}
 
 
 def classify_model(model: str) -> str:
@@ -42,7 +42,8 @@ def classify_model(model: str) -> str:
         for k in keys:
             if k in m:
                 return cls
-    return "other"
+    # Άγνωστο μοντέλο -> default κλάση (μόνο 5inch/whoop στο σύστημα)
+    return os.environ.get("DEFAULT_CLASS", "5inch")
 
 
 def split_by_class(entries: list) -> dict:

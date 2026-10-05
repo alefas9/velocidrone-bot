@@ -25,6 +25,29 @@ def load_state() -> dict:
     for track, pilots in state.get("tracks", {}).items():
         if pilots and not isinstance(next(iter(pilots.values())), dict):
             state["tracks"][track] = {"": pilots}
+
+    # migration: συγχώνευση παλιών κλάσεων -> 5inch/whoop
+    MERGE = {"": "5inch", "3inch": "whoop", "other": "5inch"}
+    for track, classes in state.get("tracks", {}).items():
+        for old_cls, new_cls in MERGE.items():
+            if old_cls in classes:
+                target = classes.setdefault(new_cls, {})
+                for key, t in classes[old_cls].items():
+                    if key not in target or t < target[key]:
+                        target[key] = t
+                del classes[old_cls]
+
+    # ONE-TIME: μεταφορά όλων στην 5inch (αίτημα κοινότητας).
+    # Τρέχει ΜΙΑ φορά - μετά το whoop μπορεί να ξαναϋπάρξει κανονικά.
+    if not state.get("all_to_5inch"):
+        for track, classes in state.get("tracks", {}).items():
+            if "whoop" in classes:
+                target = classes.setdefault("5inch", {})
+                for key, t in classes["whoop"].items():
+                    if key not in target or t < target[key]:
+                        target[key] = t
+                del classes["whoop"]
+        state["all_to_5inch"] = True
     return state
 
 

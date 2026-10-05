@@ -57,8 +57,11 @@ MODEL_ID_CLASSES = {
     55: "5inch",    # TBS Spec
     59: "5inch",    # Five33 Switchback
     108: "5inch",   # LightSwitch
-    66: "3inch",    # Twig XL 3
+    66: "5inch",    # Twig XL 3 (όλα 5inch προς το παρόν)
 }
+
+# Κλάση για ΟΛΑ τα μη-χαρτογραφημένα model_ids (μόνο 2 κλάσεις στο σύστημα!)
+DEFAULT_CLASS = os.environ.get("DEFAULT_CLASS", "5inch")
 
 MODEL_CLASSES_FILE = os.environ.get("MODEL_CLASSES_FILE", "model_classes.json")
 
@@ -172,7 +175,7 @@ def fetch_leaderboard(track_id: int, race_mode: int = 6, **kw) -> list:
                 "time": float(e["lap_time"]),
                 "model_id": e.get("model_id"),
                 "country": e.get("country"),
-                "class": load_model_classes().get(e.get("model_id"), "other"),
+                "class": load_model_classes().get(e.get("model_id")) or DEFAULT_CLASS,
             })
         except (KeyError, ValueError, TypeError):
             continue
