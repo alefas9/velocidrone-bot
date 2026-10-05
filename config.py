@@ -25,6 +25,8 @@ def _load_dotenv(path: str = ".env") -> None:
 _load_dotenv()
 
 DISCORD_WEBHOOK_URL = os.environ.get("DISCORD_WEBHOOK_URL", "").strip()
+# Προαιρετικό: ξεχωριστό κανάλι για alerts (watchdog) - βλέπουν μόνο οι admins
+DISCORD_WEBHOOK_ADMIN_URL = os.environ.get("DISCORD_WEBHOOK_ADMIN_URL", "").strip()
 TRACKS_DIR = os.environ.get("TRACKS_DIR", "./tracks").strip()
 TOP_N = int(os.environ.get("TOP_N", "10"))
 STATE_FILE = os.environ.get("STATE_FILE", "state.json")

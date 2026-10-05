@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import requests
 
-from config import DISCORD_WEBHOOK_URL
+from config import DISCORD_WEBHOOK_URL, DISCORD_WEBHOOK_ADMIN_URL
 
 TIMEOUT = 10
 
@@ -38,6 +38,20 @@ def send_discord_embed(title: str, description: str = "", fields: list | None = 
     if fields:
         embed["fields"] = fields[:25]
     _post({"embeds": [embed], "allowed_mentions": {"parse": []}})
+
+
+def send_discord_admin_message(text: str) -> None:
+    """Μήνυμα στο admin κανάλι (alerts/watchdog). Αν δεν έχει οριστεί,
+    πέφτει πίσω στο κανονικό webhook."""
+    global DISCORD_WEBHOOK_URL
+    if DISCORD_WEBHOOK_ADMIN_URL:
+        original, DISCORD_WEBHOOK_URL = DISCORD_WEBHOOK_URL, DISCORD_WEBHOOK_ADMIN_URL
+        try:
+            send_discord_message(text)
+        finally:
+            DISCORD_WEBHOOK_URL = original
+    else:
+        send_discord_message(text)
 
 
 def _chunks(text: str, size: int):
