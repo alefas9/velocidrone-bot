@@ -54,6 +54,15 @@ def export(path: str = "site_data.json") -> dict:
             for p, d in sorted(pilots.items(), key=lambda kv: -kv[1]["points"])
         ]
 
+    # ενεργά duels (μη-resolved) για εμφάνιση στο site
+    active_duels = []
+    if os.path.exists("duels.json"):
+        try:
+            with open("duels.json", encoding="utf-8") as f:
+                active_duels = [d for d in json.load(f) if not d.get("resolved")]
+        except (json.JSONDecodeError, OSError):
+            pass
+
     data = {
         "generated_at": datetime.now().isoformat(),
         "season": datetime.now().year,
@@ -61,6 +70,7 @@ def export(path: str = "site_data.json") -> dict:
         "current_leaderboard": current,
         "season_standings": season,
         "history": standings.get("history", [])[-20:],   # τελευταίες 20 εβδομάδες
+        "duels": active_duels,                            # ενεργά duels
     }
     with open(path, "w", encoding="utf-8") as f:
         json.dump(data, f, ensure_ascii=False, indent=2)
