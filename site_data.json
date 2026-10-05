@@ -1,0 +1,57 @@
+{
+  "generated_at": "2026-10-05T17:14:13.217969",
+  "season": 2026,
+  "current_track": "SimRush Week1",
+  "current_leaderboard": {
+    "5inch": [
+      {
+        "pilot": "ZOUP",
+        "time": 47.31
+      },
+      {
+        "pilot": "TettixPro",
+        "time": 53.043
+      },
+      {
+        "pilot": "DedalosFPV",
+        "time": 55.523
+      },
+      {
+        "pilot": "dimbazus",
+        "time": 77.564
+      },
+      {
+        "pilot": "Liapos",
+        "time": 79.174
+      },
+      {
+        "pilot": "tomahok",
+        "time": 79.895
+      },
+      {
+        "pilot": "Agorastos",
+        "time": 90.117
+      }
+    ],
+    "other": [
+      {
+        "pilot": "TettixPro",
+        "time": 53.043
+      },
+      {
+        "pilot": "Liapos",
+        "time": 84.144
+      },
+      {
+        "pilot": "dimbazus",
+        "time": 85.363
+      },
+      {
+        "pilot": "Agorastos",
+        "time": 90.117
+      }
+    ]
+  },
+  "season_standings": {},
+  "history": []
+}
