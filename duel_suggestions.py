@@ -16,9 +16,9 @@ from datetime import datetime, timedelta
 
 SUGGESTIONS_FILE = os.environ.get("DUEL_SUGGESTIONS_FILE", "duel_suggestions.json")
 
-GAP_THRESHOLD = 1.0    # διαφορά σε δευτερόλεπτα για να θεωρηθεί «ντέρμπι»
-MIN_DAYS = 2           # πόσες μέρες πρέπει να μείνουν κοντά πριν προταθεί duel
-CHECK_TOP = 5          # έλεγχε ζευγάρια μόνο μέσα στις πρώτες θέσεις κάθε κλάσης
+GAP_THRESHOLD = 2.0    # διαφορά σε δευτερόλεπτα για να θεωρηθεί «ντέρμπι»
+MIN_DAYS = 1           # πόσες μέρες πρέπει να μείνουν κοντά πριν προταθεί duel
+CHECK_TOP = 10          # έλεγχε ζευγάρια μόνο μέσα στις πρώτες θέσεις κάθε κλάσης
 
 
 def _load() -> dict:
