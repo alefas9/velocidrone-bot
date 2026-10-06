@@ -96,10 +96,24 @@ def announce_record(track, pilot, new_time, is_new_top, entries, cls=None, model
     if random.random() < 0.4:   # 40% πιθανότητα για κρεσέντα engagement
         base += "\n" + pick(CALL_TO_ACTION)
 
+    from messages import GIF_NEW_TOP, GIF_PERSONAL
+    pool = GIF_NEW_TOP if is_new_top else GIF_PERSONAL
+    gif = None
+    if pool:
+        # Δικά σας GIFs (αν έχετε βάλει links) - 50% πιθανότητα
+        if random.random() < 0.5:
+            gif = pick(pool)
+    else:
+        # Αυτόματα GIF από Tenor - 50% πιθανότητα
+        if random.random() < 0.5:
+            from gif_fetcher import gif_for
+            gif = gif_for("new_top" if is_new_top else "personal") or None
+
     send_discord_embed(
         title=f"{cls_label}«{track}» {category_label}".strip(),
         description=base,
         fields=format_leaderboard_discord_embed_fields(entries, top_n=TOP_N),
+        image=gif,
     )
 
 
