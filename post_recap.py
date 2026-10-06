@@ -12,6 +12,7 @@ post_recap.py
 
 import json
 import os
+import random
 from collections import Counter
 from datetime import datetime
 
@@ -73,10 +74,20 @@ def main() -> None:
         most_active, n = counts.most_common(1)[0]
         stats_txt = f"\n\n📈 **Εβδομαδιαία στατιστικά:** {n} νέα ρεκόρ συνολικά - πιο ενεργός ο **{most_active}** ({counts[most_active]})."
 
+    # GIF συνοδεία (50%) - θέματα ρεπορτάζ/νέων
+    gif = None
+    if random.random() < 0.5:
+        from gif_fetcher import fetch_gif
+        gif = fetch_gif(random.choice([
+            "news broadcast", "tv report", "breaking news",
+            "chart going up", "racing podium", "fpv drone",
+        ])) or None
+
     send_discord_embed(
         title=f"{pick(RECAP_TITLES)} — «{track}»",
         description="\n".join(lines) + stats_txt,
         color=0x9B59B6,
+        image=gif,
     )
 
     # βαθμολογία σεζόν (αν έχει ξεκινήσει)
