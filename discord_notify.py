@@ -21,6 +21,10 @@ def _mentions(mentions: list | None) -> dict:
 
 
 def _post(payload: dict) -> None:
+    # debug: καταγραφή image/GIF που στέλνεται
+    for e in payload.get("embeds", []):
+        if e.get("image"):
+            print(f"[dn] EMBED IMAGE -> {e['image']['url'][:90]}")
     if not DISCORD_WEBHOOK_URL:
         print("--- [DISCORD - δεν έχει οριστεί webhook, εκτύπωση] ---")
         print(payload.get("content") or payload.get("embeds"))
