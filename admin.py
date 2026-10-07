@@ -17,10 +17,27 @@ from discord_notify import send_discord_message
 import db
 
 
+DUEL_START = [
+    "🥊 ΞΕΚΙΝΗΣΕ ΤΟ ΜΠΑΡΑΖ: {a} vs {b} στην «{track}»! Προθεσμία: {days} μέρες - καλή τύχη και οι δύο! 🏁",
+    "⚔️ DUEL TIME! {a} εναντίον {b} στην «{track}»! Έχετε {days} μέρες - ο καλύτερος χρόνος κερδίζει! 🥊",
+    "🔥 Νέο duel στον αέρα: {a} vs {b} στην «{track}»! {days} μέρες προθεσμία - πιάστε τα γκάζια! ⛽",
+]
+
+
 def cmd_duel(args) -> None:
     duel = create_duel(args.pilot_a, args.pilot_b, args.track, days=args.days)
     print(f"Δημιουργήθηκε duel: {duel['pilot_a']} vs {duel['pilot_b']} "
           f"στο «{duel['track']}» (deadline: {duel['deadline']})")
+    if not getattr(args, "no_announce", False):
+        import random
+        from discord_notify import send_discord_message
+        from whitelist import mention_map, to_mention
+        mm = mention_map()
+        ids = [mm[k] for k in (args.pilot_a.lower(), args.pilot_b.lower()) if k in mm]
+        body = random.choice(DUEL_START).format(
+            a=to_mention(args.pilot_a, mm), b=to_mention(args.pilot_b, mm),
+            track=args.track, days=args.days)
+        send_discord_message(body, mentions=ids)
 
 
 def cmd_recap(args) -> None:
@@ -70,6 +87,32 @@ def _maybe_award_previous(args) -> None:
             color=0x3498DB,
         )
     print(f"Απονεμήθηκαν πόντοι για «{prev_track}» ({len(results)} κλάσεις)")
+
+
+def cmd_duel_list(args) -> None:
+    import duels as dm
+    duels = [d for d in dm._load_duels() if not d.get("resolved")]
+    if not duels:
+        print("Κανένα ενεργό duel.")
+        return
+    print(f"Ενεργά duels ({len(duels)}):")
+    for d in duels:
+        print(f"  🥊 {d['pilot_a']} vs {d['pilot_b']} | «{d['track']}» | λήγει: {d['deadline'][:10]}")
+
+
+def cmd_duel_cancel(args) -> None:
+    import duels as dm
+    duels = dm._load_duels()
+    before = len(duels)
+    duels = [d for d in duels if not (
+        d["pilot_a"].lower() == args.pilot_a.strip().lower()
+        and d["pilot_b"].lower() == args.pilot_b.strip().lower())]
+    dm._save_duels(duels)
+    removed = before - len(duels)
+    print(f"Ακυρώθηκαν {removed} duel(s): {args.pilot_a} vs {args.pilot_b}")
+    if removed and not args.no_announce:
+        from discord_notify import send_discord_message
+        send_discord_message(f"❌ Ακυρώθηκε το duel: {args.pilot_a} vs {args.pilot_b}")
 
 
 def cmd_standings(args) -> None:
@@ -213,6 +256,7 @@ def main() -> None:
     d = sub.add_parser("duel", help="δημιουργία duel")
     d.add_argument("pilot_a"); d.add_argument("pilot_b"); d.add_argument("track")
     d.add_argument("--days", type=int, default=3)
+    d.add_argument("--no-announce", action="store_true", help="χωρίς ανακοίνωση στο Discord")
     d.set_defaults(func=cmd_duel)
 
     r = sub.add_parser("recap", help="μηνιαίο recap")
@@ -240,6 +284,15 @@ def main() -> None:
     m.add_argument("model_id", help="το model_id από το API (π.χ. 123) ή 'list'")
     m.add_argument("cls", nargs="?", default=None, help="κλάση (5inch/whoop) - μόνο για ορισμό")
     m.set_defaults(func=cmd_model)
+
+    dl = sub.add_parser("duel-list", help="προβολή ενεργών duels")
+    dl.set_defaults(func=cmd_duel_list)
+
+    dc = sub.add_parser("duel-cancel", help="ακύρωση duel (διαγράφει ΟΛΑ τα duels του ζευγαριού)")
+    dc.add_argument("pilot_a")
+    dc.add_argument("pilot_b")
+    dc.add_argument("--no-announce", action="store_true")
+    dc.set_defaults(func=cmd_duel_cancel)
 
     st = sub.add_parser("standings", help="βαθμολογία σεζόν -> Discord")
     st.set_defaults(func=cmd_standings)
