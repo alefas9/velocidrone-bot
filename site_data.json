@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-10-08T00:00:02.637714",
+  "generated_at": "2026-10-08T00:05:01.284114",
   "season": 2026,
   "current_track": "SimRush Week1",
   "current_leaderboard": {
@@ -13,8 +13,12 @@
         "time": 45.869
       },
       {
+        "pilot": "Exo_FPV",
+        "time": 47.764
+      },
+      {
         "pilot": "DedalosFPV",
-        "time": 51.571
+        "time": 51.368
       },
       {
         "pilot": "tomahok",
