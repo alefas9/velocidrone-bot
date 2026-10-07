@@ -33,7 +33,10 @@ def _from_giphy(query: str, key: str) -> str:
     if not data:
         return ""
     g = random.choice(data)
-    return g.get("images", {}).get("original", {}).get("url", "")
+    # Σημαντικό: επιστρέφουμε το LINK ΣΕΛΙΔΑΣ (giphy.com/gifs/...) και ΟΧΙ
+    # το media/v1.Y2lk URL - το Discord κάνει unfurl τα page links και
+    # παίζει το GIF, ενώ τα νέα media URLs δεν τα render-άρει.
+    return g.get("url") or g.get("bitly_url") or g.get("images", {}).get("original", {}).get("url", "")
 
 
 def _from_tenor(query: str) -> str:
