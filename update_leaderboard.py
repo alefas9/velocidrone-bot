@@ -221,8 +221,13 @@ def scan_once(tracks_dir: str = TRACKS_DIR, source: str = "auto") -> None:
     db.save_state(state)
 
     # Daily extras (duels που έληξαν) - ακίνδυνο να τρέχει σε κάθε σάρωση
-    for announcement in check_expired_duels():
-        send_discord_message(announcement)
+    import random as _rnd
+    for item in check_expired_duels():
+        msg, gif = item
+        if gif or _rnd.random() < 0.5:
+            send_discord_embed(title="🥊 Duel", description=msg, color=0xE67E22, image=gif)
+        else:
+            send_discord_message(msg)
 
 
 def main() -> None:
