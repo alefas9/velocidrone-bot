@@ -100,9 +100,17 @@ def award_week(track: str, state: dict) -> list:
             results.append((pilot, t, pts, medals.get(pos, f"#{pos+1}")))
         season = sorted(((pl, d["points"]) for pl, d in cst.items()),
                         key=lambda kv: -kv[1])
+
+        # στατιστικά εβδομάδας για το site (Track Archive)
+        records_broken = sum(1 for r in state.get("records_log", [])
+                             if r.get("track") == track)
         standings["history"].append({
             "date": now, "track": track, "class": cls_key,
             "results": [{"pilot": pl, "time": t, "points": p} for pl, t, p, _ in results],
+            "winner": results[0][0] if results else "",
+            "best_time": results[0][1] if results else None,
+            "pilots_count": len(results),
+            "records_broken": records_broken,
         })
         out.append({"class": cls_key, "results": results, "season": season})
 

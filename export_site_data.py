@@ -20,6 +20,18 @@ import db
 import points
 
 
+def _enrich_hist(h: dict) -> dict:
+    """Συμπλήρωση πεδίων για παλιότερα history entries (που τα λείπουν)."""
+    h = dict(h)
+    results = h.get("results", [])
+    if results:
+        h.setdefault("winner", results[0].get("pilot", ""))
+        h.setdefault("best_time", results[0].get("time"))
+        h.setdefault("pilots_count", len(results))
+    h.setdefault("records_broken", 0)
+    return h
+
+
 def export(path: str = "site_data.json") -> dict:
     state = db.load_state()
     standings = points.load_standings()
@@ -69,7 +81,7 @@ def export(path: str = "site_data.json") -> dict:
         "current_track": track,
         "current_leaderboard": current,
         "season_standings": season,
-        "history": standings.get("history", [])[-20:],   # τελευταίες 20 εβδομάδες
+        "history": [_enrich_hist(h) for h in standings.get("history", [])[-20:]],
         "duels": active_duels,                            # ενεργά duels
     }
     with open(path, "w", encoding="utf-8") as f:
