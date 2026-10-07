@@ -104,10 +104,12 @@ def announce_record(track, pilot, new_time, is_new_top, entries, cls=None, model
         if random.random() < 0.5:
             gif = pick(pool)
     else:
-        # Αυτόματα GIF από Tenor - 50% πιθανότητα
+        # Αυτόματα GIF από Giphy - 50% πιθανότητα
         if random.random() < 0.5:
             from gif_fetcher import gif_for
             gif = gif_for("new_top" if is_new_top else "personal") or None
+    # καταγραφή για debug (φαίνεται στο bot.log)
+    print(f"  [gif] {'ΝΑΙ: ' + gif[:70] if gif else 'ΟΧΙ (απόρριψη/αποτυχία/50%)'}")
 
     send_discord_embed(
         title=f"{cls_label}«{track}» {category_label}".strip(),
