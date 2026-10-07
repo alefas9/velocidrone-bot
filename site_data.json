@@ -1,9 +1,13 @@
 {
-  "generated_at": "2026-10-08T00:10:01.454121",
+  "generated_at": "2026-10-08T00:15:01.366642",
   "season": 2026,
   "current_track": "SimRush Week1",
   "current_leaderboard": {
     "5inch": [
+      {
+        "pilot": "Exo_FPV",
+        "time": 41.39
+      },
       {
         "pilot": "ZOUP",
         "time": 43.869
@@ -11,10 +15,6 @@
       {
         "pilot": "TettixPro",
         "time": 45.869
-      },
-      {
-        "pilot": "Exo_FPV",
-        "time": 47.764
       },
       {
         "pilot": "DedalosFPV",
