@@ -52,9 +52,15 @@ def send_discord_embed(title: str, description: str = "", fields: list | None = 
         embed["description"] = description[:4096]
     if fields:
         embed["fields"] = fields[:25]
+    payload = {"embeds": [embed], "allowed_mentions": _mentions(mentions)}
     if image:
-        embed["image"] = {"url": image}
-    _post({"embeds": [embed], "allowed_mentions": _mentions(mentions)})
+        # GIF -> σαν content link (το Discord το κάνει unfurl και το παίζει
+        # σίγουρα). Το embed image μερικές φορές δεν render-άρεται.
+        if str(image).endswith(".gif"):
+            payload["content"] = image
+        else:
+            embed["image"] = {"url": image}
+    _post(payload)
 
 
 def send_discord_admin_message(text: str) -> None:
