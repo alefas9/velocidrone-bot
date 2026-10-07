@@ -18,6 +18,7 @@ duels.py
 Αυτό γλιτώνει όλο το "custom bot commands" κομμάτι, που είναι το πιο περίπλοκο
 μέρος ενός πλήρους duel συστήματος.
 """
+from __future__ import annotations
 
 import json
 import os

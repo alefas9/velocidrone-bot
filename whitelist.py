@@ -23,6 +23,7 @@ whitelist.py
   python3 admin.py whitelist remove "SomeName"
   python3 admin.py whitelist list
 """
+from __future__ import annotations
 
 import csv
 import json
