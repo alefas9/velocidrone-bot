@@ -115,6 +115,36 @@ def cmd_duel_cancel(args) -> None:
         send_discord_message(f"❌ Ακυρώθηκε το duel: {args.pilot_a} vs {args.pilot_b}")
 
 
+def cmd_test_gif(args) -> None:
+    """Ολοκληρωμένο self-test GIF - τα αποτελέσματα πάνε στο ADMIN κανάλι."""
+    import time
+    import gif_fetcher
+    from discord_notify import send_discord_admin_message, send_discord_embed
+
+    url = ""
+    for attempt in range(3):
+        url = gif_fetcher.gif_for("new_top")
+        if url:
+            break
+        time.sleep(2)
+
+    if not url:
+        send_discord_admin_message(
+            "🧪 **GIF TEST ΑΠΟΤΥΧΙΑ**\nΤο fetch επέστρεψε κενό και στις 3 προσπάθειες. "
+            "Έλεγξε GIPHY_API_KEY / δίκτυο.")
+        print("ΑΠΟΤΥΧΙΑ: κενό fetch")
+        return
+
+    send_discord_admin_message(
+        f"🧪 **GIF TEST**\nfetch: ✅ `{url[:80]}`\nΣτέλνω δοκιμαστικό post...")
+    # δοκιμαστικό post ΜΕ το gif (content-link λόγω νέου κώδικα)
+    send_discord_embed(
+        title="🧪 ΔΟΚΙΜΗ GIF",
+        description="Αν βλέπεις GIF να παίζει κάτω από αυτό το post, όλα δουλεύουν! 🎬",
+        image=url)
+    print("OK - αποτελέσματα στο admin κανάλι")
+
+
 def cmd_standings(args) -> None:
     import points
     from discord_notify import send_discord_embed
@@ -284,6 +314,9 @@ def main() -> None:
     m.add_argument("model_id", help="το model_id από το API (π.χ. 123) ή 'list'")
     m.add_argument("cls", nargs="?", default=None, help="κλάση (5inch/whoop) - μόνο για ορισμό")
     m.set_defaults(func=cmd_model)
+
+    tg = sub.add_parser("test-gif", help="self-test GIF -> αποτελέσματα στο admin κανάλι")
+    tg.set_defaults(func=cmd_test_gif)
 
     dl = sub.add_parser("duel-list", help="προβολή ενεργών duels")
     dl.set_defaults(func=cmd_duel_list)
