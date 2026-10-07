@@ -97,6 +97,31 @@ def main():
     else:
         check("Git σε συγχρονισμό", False, "δεν διαβάστηκε HEAD")
 
+    # 9b. ζωντάνια scan (αν έχει κολλήσει το scan -> κόκκινο)
+    scan_ok = True
+    scan_detail = ""
+    try:
+        from datetime import datetime as _dt
+        last_scan = None
+        with open("bot.log", encoding="utf-8", errors="replace") as f:
+            for line in f:
+                if "] Σάρωση" in line:
+                    last_scan = line.strip()[:9]   # [HH:MM:SS]
+        if last_scan:
+            hh, mm, ss = last_scan.strip("[]").split(":")
+            now = _dt.now()
+            log_t = now.replace(hour=int(hh), minute=int(mm), second=int(ss))
+            diff = (now - log_t).total_seconds()
+            if diff < 0:
+                diff += 86400    # πέρασμα μεσάνυχτα
+            scan_ok = diff < 900   # 15 λεπτά
+            scan_detail = f"τελευταίο scan πριν {int(diff//60)} λεπτά"
+        else:
+            scan_detail = "δεν βρέθηκε γραμμή Σάρωσης στο bot.log"
+    except Exception as e:
+        scan_ok, scan_detail = True, f"(δεν ελέγχθηκε: {e})"
+    check("Scan ζωντανό", scan_ok, scan_detail)
+
     # 10. site_data.json
     if os.path.exists("site_data.json"):
         age = (json.load(open("site_data.json")).get("generated_at", ""))
