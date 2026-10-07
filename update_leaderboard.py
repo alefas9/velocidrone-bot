@@ -214,22 +214,32 @@ def scan_once(tracks_dir: str = TRACKS_DIR, source: str = "auto") -> None:
                 if teaser:
                     send_discord_message(teaser)
 
-        # Αυτόματες προτάσεις duels (ντέρμπι που κρατούν μέρες)
+        # Αυτόματες προτάσεις duels (ντέρμπι που κρατούν μέρες) - με @mentions
         from duel_suggestions import update_suggestions
         from messages import DUEL_SUGGEST
+        from whitelist import mention_map, to_mention
+        mm = mention_map()
         for s in update_suggestions(track, groups):
-            send_discord_message(pick(DUEL_SUGGEST).format(**s))
+            data = dict(s)
+            data["leader"] = to_mention(s["leader"], mm)
+            data["chaser"] = to_mention(s["chaser"], mm)
+            ids = [mm[k] for k in (s["leader"].lower(), s["chaser"].lower()) if k in mm]
+            send_discord_message(pick(DUEL_SUGGEST).format(**data), mentions=ids)
 
     db.save_state(state)
 
     # Daily extras (duels που έληξαν) - ακίνδυνο να τρέχει σε κάθε σάρωση
     import random as _rnd
+    from whitelist import mention_map
+    mm = mention_map()
     for item in check_expired_duels():
-        msg, gif = item
+        msg, gif, mentions = item
+        mentions = [mm[k] for k in mentions if k in mm]
         if gif or _rnd.random() < 0.5:
-            send_discord_embed(title="🥊 Duel", description=msg, color=0xE67E22, image=gif)
+            send_discord_embed(title="🥊 Duel", description=msg, color=0xE67E22,
+                               image=gif, mentions=mentions)
         else:
-            send_discord_message(msg)
+            send_discord_message(msg, mentions=mentions)
 
 
 def main() -> None:

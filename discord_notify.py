@@ -13,6 +13,13 @@ from config import DISCORD_WEBHOOK_URL, DISCORD_WEBHOOK_ADMIN_URL
 TIMEOUT = 10
 
 
+def _mentions(mentions: list | None) -> dict:
+    """allowed_mentions: ping μόνο στα συγκεκριμένα user IDs (ή τίποτα)."""
+    if mentions:
+        return {"users": [str(m) for m in mentions]}
+    return {"parse": []}
+
+
 def _post(payload: dict) -> None:
     if not DISCORD_WEBHOOK_URL:
         print("--- [DISCORD - δεν έχει οριστεί webhook, εκτύπωση] ---")
@@ -23,21 +30,27 @@ def _post(payload: dict) -> None:
     r.raise_for_status()
 
 
-def send_discord_message(text: str) -> None:
-    """Απλό μήνυμα (μέχρι 2000 χαρακτήρες)."""
+def send_discord_message(text: str, mentions: list | None = None) -> None:
+    """Απλό μήνυμα (μέχρι 2000 χαρακτήρες).
+    mentions: λίστα Discord user IDs για ping (<@ID>)."""
     for chunk in _chunks(text, 2000):
-        _post({"content": chunk, "allowed_mentions": {"parse": []}})
+        _post({"content": chunk, "allowed_mentions": _mentions(mentions)})
 
 
 def send_discord_embed(title: str, description: str = "", fields: list | None = None,
-                       color: int = 0x2ECC71) -> None:
-    """Rich embed message (title + description + fields όπως στο leaderboard)."""
+                       color: int = 0x2ECC71, image: str | None = None,
+                       mentions: list | None = None) -> None:
+    """Rich embed message (title + description + fields όπως στο leaderboard).
+    image: URL εικόνας/GIF που εμφανίζεται μεγάλη κάτω από το embed.
+    mentions: λίστα Discord user IDs για ping (<@ID>)."""
     embed = {"title": title[:256], "color": color}
     if description:
         embed["description"] = description[:4096]
     if fields:
         embed["fields"] = fields[:25]
-    _post({"embeds": [embed], "allowed_mentions": {"parse": []}})
+    if image:
+        embed["image"] = {"url": image}
+    _post({"embeds": [embed], "allowed_mentions": _mentions(mentions)})
 
 
 def send_discord_admin_message(text: str) -> None:

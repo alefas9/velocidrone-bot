@@ -5,10 +5,10 @@ whitelist.py
 
 Αρχείο: whitelist.csv (δίπλα στα scripts) με μορφή:
 
-    name,discord,class
-    ZOUP,@zoup,5inch
-    tomahok,,
-    DedalosFPV,@dedalos,
+    name,discord,class,discord_id
+    ZOUP,@zoup,5inch,123456789012345678
+    tomahok,,,
+    DedalosFPV,@dedalos,,
 
 - Πρώτη γραμμή = κεφαλίδες (name, discord, class - το discord/class προαιρετικά)
 - Μία γραμμή ανά πιλότο. Οτιδήποτε μετά την 1η κολώνα (discord/class) είναι
@@ -54,6 +54,7 @@ def _read_csv() -> list:
                 "name": first,
                 "discord": str(row[1]).strip() if len(row) > 1 else "",
                 "class": str(row[2]).strip() if len(row) > 2 else "",
+                "discord_id": str(row[3]).strip() if len(row) > 3 else "",
             })
     return rows
 
@@ -63,7 +64,8 @@ def _write_csv(rows: list) -> None:
         w = csv.writer(f)
         w.writerow(["name", "discord", "class"])
         for r in rows:
-            w.writerow([r["name"], r.get("discord", ""), r.get("class", "")])
+            w.writerow([r["name"], r.get("discord", ""), r.get("class", ""),
+                        r.get("discord_id", "")])
 
 
 def load() -> set:
@@ -82,6 +84,19 @@ def load() -> set:
 
 def members() -> list:
     return _read_csv()
+
+
+def mention_map() -> dict:
+    """{ονομα_πίλοτου_lower: discord_id} - μόνο για όσους έχουν δηλώσει ID."""
+    return {r["name"].lower(): r.get("discord_id", "")
+            for r in _read_csv() if r.get("discord_id", "").isdigit()}
+
+
+def to_mention(name: str, mmap: dict | None = None) -> str:
+    """'<@ID>' αν υπάρχει ID, αλλιώς το όνομα ως έχει."""
+    mm = mmap if mmap is not None else mention_map()
+    mid = mm.get(name.lower())
+    return f"<@{mid}>" if mid else name
 
 
 def add(names: list) -> int:

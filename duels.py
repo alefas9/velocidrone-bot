@@ -38,6 +38,15 @@ def _save_duels(duels: list) -> None:
         json.dump(duels, f, ensure_ascii=False, indent=2)
 
 
+def _duel_gif() -> str | None:
+    """Τυχαίο GIF duel (50%) ή None."""
+    import random
+    if random.random() >= 0.5:
+        return None
+    from gif_fetcher import gif_for
+    return gif_for("duel") or None
+
+
 def create_duel(pilot_a: str, pilot_b: str, track_name: str, days: int = 3) -> dict:
     """
     Δημιουργεί ένα νέο duel. Κάλεσέ το χειροκίνητα (π.χ. από ένα μικρό script ή
@@ -115,7 +124,8 @@ def check_expired_duels() -> list:
             from messages import DUEL_WIN, pick
             msg = pick(DUEL_WIN).format(a=b, b=a, track=duel['track'], ta=tb, tb=ta)
 
-        announcements.append(msg)
+        mentions = [a.lower(), b.lower()]
+        announcements.append((msg, _duel_gif(), mentions))
         duel["resolved"] = True
         changed = True
 
