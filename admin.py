@@ -136,11 +136,12 @@ def cmd_test_gif(args) -> None:
         return
 
     send_discord_admin_message(
-        f"🧪 **GIF TEST**\nfetch: ✅ `{url[:80]}`\nΣτέλνω δοκιμαστικό post...")
-    # δοκιμαστικό post ΜΕ το gif (content-link λόγω νέου κώδικα)
-    send_discord_embed(
+        f"🧪 **GIF TEST**\nfetch: ✅ `{url[:80]}`\nΣτέλνω δοκιμαστικό post (μόνο εδώ)...")
+    # δοκιμαστικό post ΜΕ το gif - ΜΟΝΟ στο admin κανάλι
+    from discord_notify import send_discord_admin_embed
+    send_discord_admin_embed(
         title="🧪 ΔΟΚΙΜΗ GIF",
-        description="Αν βλέπεις GIF να παίζει κάτω από αυτό το post, όλα δουλεύουν! 🎬",
+        description="Αν βλέπεις GIF να παίζει, όλα δουλεύουν! 🎬",
         image=url)
     print("OK - αποτελέσματα στο admin κανάλι")
 

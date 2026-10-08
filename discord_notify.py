@@ -54,12 +54,10 @@ def send_discord_embed(title: str, description: str = "", fields: list | None = 
         embed["fields"] = fields[:25]
     payload = {"embeds": [embed], "allowed_mentions": _mentions(mentions)}
     if image:
-        # GIF -> σαν content link (το Discord το κάνει unfurl και το παίζει
-        # σίγουρα). Το embed image μερικές φορές δεν render-άρεται.
-        if str(image).endswith(".gif"):
-            payload["content"] = image
-        else:
-            embed["image"] = {"url": image}
+        # ΠΑΝΤΑ σαν content link: το Discord κάνει unfurl και παίζει το GIF
+        # σίγουρα (τα URLs της Giphy δεν τελειώνουν σε .gif πάντα, οπότε
+        # ο έλεγχος endswith χαλούσε το embed rendering).
+        payload["content"] = image
     _post(payload)
 
 
@@ -75,6 +73,22 @@ def send_discord_admin_message(text: str) -> None:
             DISCORD_WEBHOOK_URL = original
     else:
         send_discord_message(text)
+
+
+def send_discord_admin_embed(title: str, description: str = "", fields: list | None = None,
+                             color: int = 0x2ECC71, image: str | None = None) -> None:
+    """Embed στο admin κανάλι (fallback: κανονικό)."""
+    global DISCORD_WEBHOOK_URL
+    if DISCORD_WEBHOOK_ADMIN_URL:
+        original, DISCORD_WEBHOOK_URL = DISCORD_WEBHOOK_URL, DISCORD_WEBHOOK_ADMIN_URL
+        try:
+            send_discord_embed(title=title, description=description, fields=fields,
+                               color=color, image=image)
+        finally:
+            DISCORD_WEBHOOK_URL = original
+    else:
+        send_discord_embed(title=title, description=description, fields=fields,
+                           color=color, image=image)
 
 
 def _chunks(text: str, size: int):
