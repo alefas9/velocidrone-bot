@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-10-08T22:35:01.555446",
+  "generated_at": "2026-10-08T22:40:01.632621",
   "season": 2026,
   "current_track": "SimRush Week1",
   "current_leaderboard": {
@@ -44,16 +44,5 @@
   },
   "season_standings": {},
   "history": [],
-  "duels": [
-    {
-      "pilot_a": "Liapos",
-      "pilot_b": "Agorastos",
-      "track": "SimRush Week1",
-      "created_at": "2026-10-07T20:44:19.458237",
-      "deadline": "2026-10-10T20:44:19.458274",
-      "best_time_a": null,
-      "best_time_b": null,
-      "resolved": false
-    }
-  ]
+  "duels": []
 }
