@@ -20,6 +20,7 @@ Flow:
   csv  : χειροκίνητα CSV exports στον φάκελο tracks/
   auto : web αν έχει οριστεί TRACK_URLS/SCENERY_IDS, αλλιώς csv (default)
 """
+from __future__ import annotations
 
 import argparse
 import datetime
