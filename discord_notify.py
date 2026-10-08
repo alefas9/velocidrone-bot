@@ -41,11 +41,28 @@ def send_discord_message(text: str, mentions: list | None = None) -> None:
         _post({"content": chunk, "allowed_mentions": _mentions(mentions)})
 
 
+def _post_with_attachment(payload: dict, file_bytes: bytes, filename: str,
+                          url: str | None = None) -> None:
+    """Στέλνει payload + συνημμένο αρχείο (GIF). Παίζει ΠΑΝΤΑ στο Discord."""
+    target = url or DISCORD_WEBHOOK_URL
+    if not target:
+        print("--- [ATTACH] ---")
+        print(payload.get("embeds", [{}])[0].get("title"), f"+ {len(file_bytes)} bytes")
+        return
+    r = requests.post(target,
+                      data={"payload_json": _json.dumps(payload)},
+                      files={"file": (filename, io.BytesIO(file_bytes), "image/gif")},
+                      timeout=TIMEOUT)
+    r.raise_for_status()
+
+
 def send_discord_embed(title: str, description: str = "", fields: list | None = None,
                        color: int = 0x2ECC71, image: str | None = None,
-                       mentions: list | None = None) -> None:
+                       mentions: list | None = None,
+                       attachment: bytes | None = None) -> None:
     """Rich embed message (title + description + fields όπως στο leaderboard).
-    image: URL εικόνας/GIF που εμφανίζεται μεγάλη κάτω από το embed.
+    image: URL GIF/page-link (fallback αν δεν υπάρχει attachment).
+    attachment: bytes GIF - το ανεβάζει ως συνημμένο (παίζει ΠΑΝΤΑ).
     mentions: λίστα Discord user IDs για ping (<@ID>)."""
     embed = {"title": title[:256], "color": color}
     if description:
@@ -53,10 +70,10 @@ def send_discord_embed(title: str, description: str = "", fields: list | None = 
     if fields:
         embed["fields"] = fields[:25]
     payload = {"embeds": [embed], "allowed_mentions": _mentions(mentions)}
+    if attachment:
+        _post_with_attachment(payload, attachment, "record.gif")
+        return
     if image:
-        # ΠΑΝΤΑ σαν content link: το Discord κάνει unfurl και παίζει το GIF
-        # σίγουρα (τα URLs της Giphy δεν τελειώνουν σε .gif πάντα, οπότε
-        # ο έλεγχος endswith χαλούσε το embed rendering).
         payload["content"] = image
     _post(payload)
 

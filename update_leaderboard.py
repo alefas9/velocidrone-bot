@@ -99,22 +99,33 @@ def announce_record(track, pilot, new_time, is_new_top, entries, cls=None, model
     from messages import GIF_NEW_TOP, GIF_PERSONAL
     pool = GIF_NEW_TOP if is_new_top else GIF_PERSONAL
     gif = None
+    gif_bytes = None
     if pool:
-        # Δικά σας GIFs (αν έχετε βάλει links) - 50% πιθανότητα
         if random.random() < 0.5:
             gif = pick(pool)
     else:
-        # Αυτόματα GIF από Giphy - ΠΑΝΤΑ (100%)
-        from gif_fetcher import gif_for
-        gif = gif_for("new_top" if is_new_top else "personal") or None
-    # καταγραφή για debug (φαίνεται στο bot.log)
-    print(f"  [gif] {'ΝΑΙ: ' + gif[:70] if gif else 'ΟΧΙ (απόρριψη/αποτυχία/50%)'}")
+        # Αυτόματα GIF: κατέβασμα + συνημμένο (παίζει πάντα στο Discord)
+        import requests as _rq
+        from gif_fetcher import fetch_gif_full
+        info = fetch_gif_full("new_top" if is_new_top else "personal")
+        if info:
+            try:
+                rr = _rq.get(info["media"], timeout=15)
+                if rr.ok and 1000 < len(rr.content) < 8_000_000:
+                    gif_bytes = rr.content
+                else:
+                    gif = info.get("page")
+            except Exception:
+                gif = info.get("page")
+    status = "ATTACH" if gif_bytes else ("LINK " + (gif or "")[:60] if gif else "ΟΧΙ")
+    print(f"  [gif] {status}")
 
     send_discord_embed(
         title=f"{cls_label}«{track}» {category_label}".strip(),
         description=base,
         fields=format_leaderboard_discord_embed_fields(entries, top_n=TOP_N),
         image=gif,
+        attachment=gif_bytes,
     )
 
 

@@ -121,28 +121,38 @@ def cmd_test_gif(args) -> None:
     import gif_fetcher
     from discord_notify import send_discord_admin_message, send_discord_embed
 
-    url = ""
+    info = None
     for attempt in range(3):
-        url = gif_fetcher.gif_for("new_top")
-        if url:
+        info = gif_fetcher.fetch_gif_full("new_top")
+        if info:
             break
         time.sleep(2)
 
-    if not url:
+    if not info:
         send_discord_admin_message(
-            "🧪 **GIF TEST ΑΠΟΤΥΧΙΑ**\nΤο fetch επέστρεψε κενό και στις 3 προσπάθειες. "
-            "Έλεγξε GIPHY_API_KEY / δίκτυο.")
+            "🧪 **GIF TEST ΑΠΟΤΥΧΙΑ**\nΤο fetch επέστρεψε κενό. Έλεγξε GIPHY_API_KEY / δίκτυο.")
         print("ΑΠΟΤΥΧΙΑ: κενό fetch")
         return
 
+    # κατέβασμα GIF για συνημμένο
+    gif_bytes = None
+    try:
+        import requests as _rq
+        rr = _rq.get(info["media"], timeout=15)
+        if rr.ok and 1000 < len(rr.content) < 8_000_000:
+            gif_bytes = rr.content
+    except Exception:
+        pass
+
+    mode = f"ATTACH ({len(gif_bytes)//1024}KB)" if gif_bytes else "LINK"
     send_discord_admin_message(
-        f"🧪 **GIF TEST**\nfetch: ✅ `{url[:80]}`\nΣτέλνω δοκιμαστικό post (μόνο εδώ)...")
-    # δοκιμαστικό post ΜΕ το gif - ΜΟΝΟ στο admin κανάλι
+        f"🧪 **GIF TEST** ({mode})\npage: `{info['page'][:70]}`\nΣτέλνω δοκιμαστικό (μόνο εδώ)...")
     from discord_notify import send_discord_admin_embed
     send_discord_admin_embed(
         title="🧪 ΔΟΚΙΜΗ GIF",
         description="Αν βλέπεις GIF να παίζει, όλα δουλεύουν! 🎬",
-        image=url)
+        image=info["page"] if not gif_bytes else None,
+        attachment=gif_bytes)
     print("OK - αποτελέσματα στο admin κανάλι")
 
 

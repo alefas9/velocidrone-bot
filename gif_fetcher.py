@@ -51,8 +51,34 @@ def _from_tenor(query: str) -> str:
     return g.get("content_url", "")
 
 
+def fetch_gif_full(query: str) -> dict | None:
+    """{'page': link_σελίδας, 'media': απευθείας_URL_για_download} ή None."""
+    try:
+        key = GIPHY_KEY or GIPHY_DEMO
+        r = requests.get("https://api.giphy.com/v1/gifs/search", params={
+            "api_key": key, "q": query, "limit": 25, "rating": "pg",
+        }, timeout=8)
+        r.raise_for_status()
+        data = r.json().get("data", [])
+        if not data:
+            return None
+        gif = random.choice(data)
+        imgs = gif.get("images", {})
+        media = (imgs.get("downsized", {}).get("url")
+                 or imgs.get("fixed_height", {}).get("url")
+                 or imgs.get("original", {}).get("url"))
+        page = gif.get("url") or media
+        if page or media:
+            return {"page": page, "media": media}
+    except Exception:
+        pass
+    return None
+
+
 def fetch_gif(query: str) -> str:
     """URL τυχαίου GIF ή "" αν αποτύχουν όλα."""
+    info = fetch_gif_full(query)
+    return (info or {}).get("page", "")
     for fn in (
         lambda: _from_giphy(query, GIPHY_KEY) if GIPHY_KEY else None,
         lambda: _from_giphy(query, GIPHY_DEMO),
