@@ -13,6 +13,7 @@ gif_fetcher.py
 
 Αν όλα αποτύχουν -> κενό string (το post βγαίνει κανονικά χωρίς GIF).
 """
+from __future__ import annotations
 
 import os
 import random
