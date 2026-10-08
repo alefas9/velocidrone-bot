@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-10-09T00:25:02.047313",
+  "generated_at": "2026-10-09T00:30:02.155519",
   "season": 2026,
   "current_track": "SimRush Week1",
   "current_leaderboard": {
@@ -25,16 +25,16 @@
         "time": 66.558
       },
       {
+        "pilot": "Liapos",
+        "time": 70.629
+      },
+      {
         "pilot": "dimbazus",
         "time": 71.886
       },
       {
         "pilot": "Agorastos",
         "time": 77.474
-      },
-      {
-        "pilot": "Liapos",
-        "time": 79.174
       },
       {
         "pilot": "fpvchucky",
