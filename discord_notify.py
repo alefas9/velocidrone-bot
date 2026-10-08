@@ -93,19 +93,20 @@ def send_discord_admin_message(text: str) -> None:
 
 
 def send_discord_admin_embed(title: str, description: str = "", fields: list | None = None,
-                             color: int = 0x2ECC71, image: str | None = None) -> None:
+                             color: int = 0x2ECC71, image: str | None = None,
+                             attachment: bytes | None = None) -> None:
     """Embed στο admin κανάλι (fallback: κανονικό)."""
     global DISCORD_WEBHOOK_URL
     if DISCORD_WEBHOOK_ADMIN_URL:
         original, DISCORD_WEBHOOK_URL = DISCORD_WEBHOOK_URL, DISCORD_WEBHOOK_ADMIN_URL
         try:
             send_discord_embed(title=title, description=description, fields=fields,
-                               color=color, image=image)
+                               color=color, image=image, attachment=attachment)
         finally:
             DISCORD_WEBHOOK_URL = original
     else:
         send_discord_embed(title=title, description=description, fields=fields,
-                           color=color, image=image)
+                           color=color, image=image, attachment=attachment)
 
 
 def _chunks(text: str, size: int):
