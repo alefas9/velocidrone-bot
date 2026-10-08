@@ -6,6 +6,9 @@ discord_notify.py
 """
 from __future__ import annotations
 
+import io
+import json as _json
+
 import requests
 
 from config import DISCORD_WEBHOOK_URL, DISCORD_WEBHOOK_ADMIN_URL
