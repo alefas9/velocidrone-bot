@@ -44,7 +44,8 @@ from config import REQUEST_TIMEOUT
 
 BASE = "https://velocidrone.co.uk"
 KEY = b"BatCaveGGevaCtaB"          # AES-128 (16 bytes) - από FPVBattle Encryption.cs
-TOKEN = ""                          # optional bearer token (token mode)
+# optional bearer token (token mode) - ορίζεται στο .env ως VELOCIDRONE_TOKEN
+TOKEN = os.environ.get("VELOCIDRONE_TOKEN", "").strip()
 
 BLOCK = 16
 

@@ -32,8 +32,11 @@ def _load() -> dict:
 
 
 def _save(data: dict) -> None:
-    with open(SUGGESTIONS_FILE, "w", encoding="utf-8") as f:
+    # atomic write: ποτέ half-written file
+    tmp = SUGGESTIONS_FILE + ".tmp"
+    with open(tmp, "w", encoding="utf-8") as f:
         json.dump(data, f, ensure_ascii=False, indent=2)
+    os.replace(tmp, SUGGESTIONS_FILE)
 
 
 def update_suggestions(track: str, groups: dict, now=None) -> list:
@@ -68,8 +71,13 @@ def update_suggestions(track: str, groups: dict, now=None) -> list:
 
     # καθάρισε ζευγάρια που δεν είναι πια κοντά (για να μη φουσκώνει το αρχείο)
     # κράτα τα suggested (ιστορικό) για 30 μέρες
+    # ΜΟΝΟ για το τρέχον track - αλλιώς η σάρωση ενός track σκότωνε
+    # την παρακολούθηση όλων των υπόλοιπων.
     cutoff = now - timedelta(days=30)
+    prefix = f"{track}|"
     for key in list(data.keys()):
+        if not key.startswith(prefix):
+            continue   # ξένο track - άσε το ήσυχο
         if key not in current_pairs:
             if data[key].get("suggested"):
                 first = datetime.fromisoformat(data[key]["first_seen"])

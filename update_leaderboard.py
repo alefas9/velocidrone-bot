@@ -84,9 +84,21 @@ def _class_label(cls: str) -> str:
 
 
 def announce_record(track, pilot, new_time, is_new_top, entries, cls=None, model=None):
-    """Real-time ανακοίνωση νέου ρεκόρ με ποικιλία μηνυμάτων (engagement!)."""
+    """Real-time ανακοίνωση νέου ρεκόρ με ποικιλία μηνυμάτων (engagement!).
+
+    GIF: (1) αν έχεις γεμίσει τις curated λίστες GIF_NEW_TOP/GIF_PERSONAL στο
+    messages.py, στέλνει 50% ένα από αυτά ως link (unfurl), (2) αλλιώς κατεβάζει
+    αυτόματα ένα GIF από Giphy API και το στέλνει ως συνημμένο (παίζει ΠΑΝΤΑ).
+    """
     import random
+    import requests as _rq
     from messages import NEW_TOP, PERSONAL, CALL_TO_ACTION, pick
+    from gif_fetcher import fetch_gif_full, QUERIES_NEW_TOP, QUERIES_PERSONAL
+
+    try:
+        from messages import GIF_NEW_TOP, GIF_PERSONAL
+    except ImportError:
+        GIF_NEW_TOP, GIF_PERSONAL = [], []
 
     category = get_category(track)
     category_label = themed_day_label(category) if category != "uncategorized" else ""
@@ -97,18 +109,15 @@ def announce_record(track, pilot, new_time, is_new_top, entries, cls=None, model
     if random.random() < 0.4:   # 40% πιθανότητα για κρεσέντα engagement
         base += "\n" + pick(CALL_TO_ACTION)
 
-    from messages import GIF_NEW_TOP, GIF_PERSONAL
-    pool = GIF_NEW_TOP if is_new_top else GIF_PERSONAL
     gif = None
     gif_bytes = None
+    pool = GIF_NEW_TOP if is_new_top else GIF_PERSONAL
     if pool:
         if random.random() < 0.5:
-            gif = pick(pool)
+            gif = pick(pool)              # link σελίδας giphy.com (unfurl στο Discord)
     else:
-        # Αυτόματα GIF: κατέβασμα + συνημμένο (παίζει πάντα στο Discord)
-        import requests as _rq
-        from gif_fetcher import fetch_gif_full
-        info = fetch_gif_full("new_top" if is_new_top else "personal")
+        info = fetch_gif_full(random.choice(
+            QUERIES_NEW_TOP if is_new_top else QUERIES_PERSONAL))
         if info:
             try:
                 rr = _rq.get(info["media"], timeout=15)
@@ -122,49 +131,11 @@ def announce_record(track, pilot, new_time, is_new_top, entries, cls=None, model
     print(f"  [gif] {status}")
 
     send_discord_embed(
-        title=f"{cls_label}«{track}» {category_label}".strip(),
+        title=f"{cls_label}«{track}» {category_label}".strip() or track,
         description=base,
         fields=format_leaderboard_discord_embed_fields(entries, top_n=TOP_N),
         image=gif,
         attachment=gif_bytes,
-    )
-
-
-def _entry_key(entry: dict) -> str:
-    """Μοναδικό κλειδί εγγραφής: πιλότος (+μοντέλο/model_id αν υπάρχει).
-    Ο ίδιος πιλότος με διαφορετικά quads = ξεχωριστές εγγραφές."""
-    model = entry.get("model") or entry.get("model_id")
-    return f"{entry['pilot']}|{model}" if model is not None else entry["pilot"]
-
-
-def _class_label(cls: str) -> str:
-    try:
-        from velocidrone_web import CLASS_LABELS
-        return CLASS_LABELS.get(cls, cls)
-    except ImportError:
-        return cls
-
-
-def announce_record(track, pilot, new_time, is_new_top, entries, cls=None, model=None):
-    """Real-time ανακοίνωση νέου ρεκόρ με ποικιλία μηνυμάτων (engagement!)."""
-    import random
-    from messages import NEW_TOP, PERSONAL, CALL_TO_ACTION, pick
-
-    category = get_category(track)
-    category_label = themed_day_label(category) if category != "uncategorized" else ""
-    cls_label = f"[{_class_label(cls)}] " if cls else ""
-    model_txt = f" ({model})" if model else ""
-
-    base = pick(NEW_TOP if is_new_top else PERSONAL).format(
-        pilot=pilot, track=track, time=new_time)
-    # 40% πιθανότητα για κρεσέντα
-    if random.random() < 0.4:
-        base = base + "\n" + pick(CALL_TO_ACTION)
-
-    send_discord_embed(
-        title=f"{cls_label}«{track}» {category_label}".strip() or track,
-        description=base.replace("{pilot}", f"**{pilot}**").replace("{time}", f"**{new_time:.3f}s**") if False else base,
-        fields=format_leaderboard_discord_embed_fields(entries, top_n=TOP_N),
     )
 
 
@@ -187,8 +158,10 @@ def scan_once(tracks_dir: str = TRACKS_DIR, source: str = "auto") -> None:
         known = state["tracks"].get(track)
         if not known:
             # Πρώτο import του track -> σιωπηλή καταγραφή (όχι spam 15 posts μαζί)
+            # classless εγγραφές -> "5inch" (συμβατό με το migration του db.py)
             for e in entries:
-                db.set_best(state, track, _entry_key(e), e["time"], e.get("class"))
+                db.set_best(state, track, _entry_key(e), e["time"],
+                            e.get("class") or "5inch")
             print(f"  + «{track}»: πρώτο import, {len(entries)} εγγραφές (σιωπηλό).")
             continue
 
@@ -202,7 +175,10 @@ def scan_once(tracks_dir: str = TRACKS_DIR, source: str = "auto") -> None:
         improved = {}
         for entry in entries:
             pilot, t = entry["pilot"], entry["time"]
-            cls = entry.get("class") or ""
+            # classless -> "5inch": το db.py migration μετακινεί την "" κλάση
+            # στο "5inch" - αν κρατήσουμε "" εδώ, ο έλεγχος βελτίωσης ΔΕΝ
+            # ταιριάζει ποτέ και κάθε σάρωση ξανανακοινώνει ΟΛΟΥΣ (spam loop!)
+            cls = entry.get("class") or "5inch"
             old = known.get(cls, {}).get(_entry_key(entry))
             if old is not None and t >= old:
                 continue  # όχι βελτίωση
@@ -210,7 +186,13 @@ def scan_once(tracks_dir: str = TRACKS_DIR, source: str = "auto") -> None:
             group = groups.get(cls) or groups.get(None) or entries
             # κορυφαίο ρεκόρ = #1 ΜΕΣΑ στην κλάση του (5inch/whoop ξεχωριστά)
             is_new_top = bool(group) and group[0]["pilot"] == pilot and t <= group[0]["time"] + 1e-9
-            announce_record(track, pilot, t, is_new_top, group, cls or None, entry.get("model"))
+            try:
+                announce_record(track, pilot, t, is_new_top, group, cls or None, entry.get("model"))
+            except Exception as e:
+                # ΔΕΝ αποθηκεύουμε τον καλύτερο χρόνο -> θα ξανανιχνευθεί
+                # και θα ξανασταλεί στην επόμενη σάρωση (δεν χάνεται η ανακοίνωση)
+                print(f"  ! αποτυχία ανακοίνωσης ({pilot}): {e}")
+                continue
             db.set_best(state, track, _entry_key(entry), t, cls)
             db.log_record(state, pilot, track, t, today)
             update_duel_times(track_name=track, pilot_name=pilot, new_time=t)
@@ -218,24 +200,28 @@ def scan_once(tracks_dir: str = TRACKS_DIR, source: str = "auto") -> None:
 
         # Teaser ΜΟΝΟ αν υπήρξε βελτίωση σε αυτή την κλάση αυτή τη σάρωση
         # (αλλιώς θα σπάμμαρε το ίδιο μήνυμα κάθε 5 λεπτά)
-        from messages import TEASER, pick
-        for cls, group in groups.items():
-            if improved.get(cls or None) or improved.get(cls):
-                teaser = proximity_teaser(group, templates=TEASER)
-                if teaser:
-                    send_discord_message(teaser)
+        # Τα extras είναι fire-and-forget: σφάλμα εδώ δεν πρέπει να σκοτώσει τη σάρωση.
+        try:
+            from messages import TEASER, pick
+            for cls, group in groups.items():
+                if improved.get(cls or None) or improved.get(cls):
+                    teaser = proximity_teaser(group, templates=TEASER)
+                    if teaser:
+                        send_discord_message(teaser)
 
-        # Αυτόματες προτάσεις duels (ντέρμπι που κρατούν μέρες) - με @mentions
-        from duel_suggestions import update_suggestions
-        from messages import DUEL_SUGGEST
-        from whitelist import mention_map, to_mention
-        mm = mention_map()
-        for s in update_suggestions(track, groups):
-            data = dict(s)
-            data["leader"] = to_mention(s["leader"], mm)
-            data["chaser"] = to_mention(s["chaser"], mm)
-            ids = [mm[k] for k in (s["leader"].lower(), s["chaser"].lower()) if k in mm]
-            send_discord_message(pick(DUEL_SUGGEST).format(**data), mentions=ids)
+            # Αυτόματες προτάσεις duels (ντέρμπι που κρατούν μέρες) - με @mentions
+            from duel_suggestions import update_suggestions
+            from messages import DUEL_SUGGEST
+            from whitelist import mention_map, to_mention
+            mm = mention_map()
+            for s in update_suggestions(track, groups):
+                data = dict(s)
+                data["leader"] = to_mention(s["leader"], mm)
+                data["chaser"] = to_mention(s["chaser"], mm)
+                ids = [mm[k] for k in (s["leader"].lower(), s["chaser"].lower()) if k in mm]
+                send_discord_message(pick(DUEL_SUGGEST).format(**data), mentions=ids)
+        except Exception as e:
+            print(f"  ! σφάλμα στα extras του «{track}» (teaser/duel suggestions): {e}")
 
     db.save_state(state)
 
@@ -270,7 +256,11 @@ def main() -> None:
         print(f"Polling κάθε {args.loop}s από '{tracks_dir}' [{args.source}] (Ctrl+C για τερματισμό)")
         try:
             while True:
-                scan_once(tracks_dir, args.source)
+                try:
+                    scan_once(tracks_dir, args.source)
+                except Exception as e:
+                    # Τυχόν σφάλμα (δίκτυο, Discord, corrupted file) δεν σκοτώνει το loop
+                    print(f"⚠️ Σφάλμα στη σάρωση (συνεχίζω): {e}")
                 time.sleep(args.loop)
         except KeyboardInterrupt:
             print("Τερματισμός.")

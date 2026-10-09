@@ -80,18 +80,6 @@ def fetch_gif(query: str) -> str:
     """URL τυχαίου GIF ή "" αν αποτύχουν όλα."""
     info = fetch_gif_full(query)
     return (info or {}).get("page", "")
-    for fn in (
-        lambda: _from_giphy(query, GIPHY_KEY) if GIPHY_KEY else None,
-        lambda: _from_giphy(query, GIPHY_DEMO),
-        lambda: _from_tenor(query),
-    ):
-        try:
-            url = fn()
-            if url:
-                return url
-        except Exception:
-            continue
-    return ""
 
 
 # Έτοιμα query-sets ανά event

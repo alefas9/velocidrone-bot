@@ -1,0 +1,66 @@
+VELOIDRONE BOT - BULLETPROOF UPDATE (2026-10-09)
+====================================================
+
+ΠΩΣ ΝΑ ΕΓΚΑΤΑΣΤΗΣΕΙΣ:
+1. Αντίγραψε τα αρχεία πάνω από τον φάκελο του bot στο NAS (ή κάνε git push σε νέο branch).
+2. pip install -r requirements.txt   (προστέθηκε pycryptodome - απαραίτητο για API mode!)
+3. Τρέξε μία φορά: python3 health_check.py
+4. Κανένα state file δεν χρειάζεται migration - όλα backwards compatible.
+
+ΑΛΛΑΓΕΣ ΑΝΑ ΑΡΧΕΙΟ:
+
+update_leaderboard.py
+  - Αφαιρέθηκαν διπλότυποι ορισμοί (_entry_key/_class_label/announce_record).
+    Ισχύει πλέον ΜΙΑ καθαρή έκδοση - επανήλθε η λογική GIF (κατεβάζει αυτόματα
+    από Giphy API και στέλνει ως συνημμένο - παίζει πάντα).
+  - FIX SPAM LOOP: εγγραφές χωρίς class αποθηκεύονται πια ως "5inch" (όχι ""),
+    ταιριαχτό με το migration του db.py - πριν το fix, κάθε σάρωση
+    ξανανακοίνωνε ΟΛΟΥΣ τους πιλότους (classless tracks).
+  - Αποτυχία αποστολής Discord δεν σκοτώνει τη σάρωση - η ανακοίνωση
+    ξαναδοκιμάζεται στην επόμενη (ο χρόνος δεν αποθηκεύεται).
+  - Teaser/duel-suggestions: σφάλμα δεν διακόπτει τη σάρωση.
+  - --loop: τυχόν exception δεν σκοτώνει το loop process.
+
+db.py
+  - Corrupted state.json -> αυτόματο backup (state.json.corrupt-...) και
+    καθαρό restart (σιωπηλό re-import, δεν σπαμμάρει).
+
+duels.py, duel_suggestions.py, points.py
+  - Atomic writes (tmp + os.replace) - αδύνατο half-written file.
+  - Corrupted JSON -> backup + καθαρή λίστα (recovery).
+
+points.py
+  - IDEMPOTENT ΑΠΟΝΟΜΗ: η ίδια πίστα δεν βαθμολογείται δύο φορές.
+    Προστασία από διπλό 'admin.py week' / 'award'. Νέο πεδίο 'awarded'
+    στο standings.json (δημιουργείται αυτόματα).
+
+admin.py
+  - Νέο flag --force-award στα 'week' και 'award' (παρακάμπτει την
+    προστασία - με δική σου ευθύνη).
+
+velocidrone_source.py
+  - FIX: CLASS_MAP είχε το "5inch" δύο φορές (χάνονταν keywords) - ενώθηκαν.
+  - split_by_class: classless -> "5inch" (ήταν "other").
+
+duel_suggestions.py
+  - FIX: το cleanup δεν σβήνει πια ξένα tracks (πριν η σάρωση ενός track
+    κατέστρεφε την παρακολούθηση όλων των υπόλοιπων).
+
+gif_fetcher.py
+  - Αφαιρέθηκε dead code (unreachable block).
+
+velocidrone_api.py
+  - VELOCIDRONE_TOKEN από .env πλέον συνδέεται στο TOKEN (token mode).
+
+requirements.txt
+  - + pycryptodome>=3.19 (ΑΠΑΡΑΙΤΗΤΟ για API mode - έλειπε!).
+
+messages.py
+  - Νέες κενές λίστες GIF_NEW_TOP / GIF_PERSONAL: βάλε εκεί δικά σου
+    links σελίδων giphy.com/gifs/... για curated GIF (αλλιώς auto-fetch).
+
+ΔΟΚΙΜΑΣΜΕΝΟ:
+  - Demo σάρωση: import -> σιωπή -> βελτίωση -> 1 post -> σιωπή.
+  - Idempotency πόντων (2η απονομή κόβεται).
+  - Recovery από corrupted state.json / duels.json.
+  - Syntax check και τα 21 αρχεία.

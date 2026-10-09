@@ -30,13 +30,26 @@ DUELS_FILE = os.environ.get("DUELS_FILE", "duels.json")
 def _load_duels() -> list:
     if not os.path.exists(DUELS_FILE):
         return []
-    with open(DUELS_FILE, "r", encoding="utf-8") as f:
-        return json.load(f)
+    try:
+        with open(DUELS_FILE, "r", encoding="utf-8") as f:
+            data = json.load(f)
+        return data if isinstance(data, list) else []
+    except (json.JSONDecodeError, OSError):
+        # corrupted file -> backup + καθαρή λίστα (κανένα duel δεν κρίνεται)
+        try:
+            os.replace(DUELS_FILE, DUELS_FILE + ".corrupt")
+        except OSError:
+            pass
+        print(f"⚠️ Το {DUELS_FILE} ήταν corrupted - κρατήθηκε backup (.corrupt), ξεκινάω με κενή λίστα.")
+        return []
 
 
 def _save_duels(duels: list) -> None:
-    with open(DUELS_FILE, "w", encoding="utf-8") as f:
+    # atomic write: ποτέ half-written file αν κοπεί το task ενώ γράφει
+    tmp = DUELS_FILE + ".tmp"
+    with open(tmp, "w", encoding="utf-8") as f:
         json.dump(duels, f, ensure_ascii=False, indent=2)
+    os.replace(tmp, DUELS_FILE)
 
 
 def _duel_gif() -> str | None:

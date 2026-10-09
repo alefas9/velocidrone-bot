@@ -70,6 +70,17 @@ CALL_TO_ACTION = [
     "Η πίστα γελάει με τους διστακτικούς! 😏",
 ]
 
+# ---- Curated GIF (προαιρετικό) ----
+# Βάλε εδώ links ΣΕΛΙΔΩΝ giphy.com/gifs/... (ΟΧΙ media/v1.Y2lk URLs - δεν κάνουν
+# unfurl το Discord). Αν μείνουν κενές οι λίστες, το bot κατεβάζει αυτόματα
+# ένα GIF από την Giphy API και το στέλνει ως συνημμένο (παίζει πάντα).
+GIF_NEW_TOP = [
+    # "https://giphy.com/gifs/xxxx",
+]
+GIF_PERSONAL = [
+    # "https://giphy.com/gifs/xxxx",
+]
+
 # ---- Teaser κλειστής μάχης ----
 TEASER = [
     "😱 {chaser} σε θέση βολής: μόνο {gap:.3f}s από το #{pos}!",

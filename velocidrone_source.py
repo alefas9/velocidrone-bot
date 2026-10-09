@@ -28,10 +28,10 @@ MODEL_ALIASES = ["model", "model name", "quad", "drone", "aircraft"]
 # Ό,τι δεν ταιριάζει -> "other". Πρόσθεσε ελεύθερα τα μοντέλα της ομάδας σου.
 CLASS_MAP = {
     "5inch": ["tbs", "five33", "lightswitch", "switchback", "oblivion",
-              "flipmode", "bahamut", "drl", "astrox", "spec"],
+              "flipmode", "bahamut", "drl", "astrox", "spec",
+              "twig", '3"', "3 inch"],   # 3" -> 5inch (όλοι μαζί προς το παρόν)
     "whoop": ["newbeedrone", "tinyhawk", "whoop", "mobula", "meteor",
               "acropee", "micro", "betafpv"],
-    "5inch": ["twig", '3"', "3 inch"],   # 3" -> 5inch (όλοι μαζί προς το παρόν)
 }
 CLASS_LABELS = {"5inch": "🏁 5 Inch", "whoop": "🐝 Whoop"}
 
@@ -47,10 +47,11 @@ def classify_model(model: str) -> str:
 
 
 def split_by_class(entries: list) -> dict:
-    """{class: [entries...]} - κάθε κλάση με το δικό της ταξινομημένο leaderboard."""
+    """{class: [entries...]} - κάθε κλάση με το δικό της ταξινομημένο leaderboard.
+    classless εγγραφές πάνε στο "5inch" (default κλάση του συστήματος)."""
     classes = {}
     for e in entries:
-        classes.setdefault(e.get("class", "other"), []).append(e)
+        classes.setdefault(e.get("class") or "5inch", []).append(e)
     for lst in classes.values():
         lst.sort(key=lambda x: x["time"])
     return classes

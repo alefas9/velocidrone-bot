@@ -10,6 +10,7 @@ db.py
 import json
 import os
 import threading
+from datetime import datetime
 
 from config import STATE_FILE
 
@@ -19,8 +20,22 @@ _lock = threading.Lock()
 def load_state() -> dict:
     if not os.path.exists(STATE_FILE):
         return {"tracks": {}, "records_log": []}
-    with open(STATE_FILE, "r", encoding="utf-8") as f:
-        state = json.load(f)
+    try:
+        with open(STATE_FILE, "r", encoding="utf-8") as f:
+            state = json.load(f)
+    except (json.JSONDecodeError, OSError) as e:
+        # Ανάκαμψη από corrupted state: κράτα backup και ξεκίνα καθαρά.
+        # Το πρώτο μετά import κάθε track είναι σιωπηλό, οπότε δεν σπαμμάρει.
+        backup = f"{STATE_FILE}.corrupt-{datetime.now():%Y%m%d-%H%M%S}"
+        try:
+            os.replace(STATE_FILE, backup)
+        except OSError:
+            backup = "(αδύνατο backup)"
+        print(f"⚠️ Το {STATE_FILE} ήταν corrupted ({e}) - κρατήθηκε ως {backup}, "
+              f"ξεκινάω με καθαρό state.")
+        return {"tracks": {}, "records_log": []}
+    state.setdefault("tracks", {})
+    state.setdefault("records_log", [])
     # migration: παλιά μορφή {track: {pilot: time}} -> {track: {"": {pilot: time}}}
     for track, pilots in state.get("tracks", {}).items():
         if pilots and not isinstance(next(iter(pilots.values())), dict):

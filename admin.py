@@ -69,7 +69,8 @@ def _maybe_award_previous(args) -> None:
     if prev_track not in state.get("tracks", {}):
         print(f"(δεν βρέθηκαν δεδομένα για την προηγούμενη πίστα «{prev_track}» - παράλειψη απονομής)")
         return
-    results = points.award_week(prev_track, state)
+    results = points.award_week(prev_track, state,
+                                force=getattr(args, "force_award", False))
     if not results:
         return
     from discord_notify import send_discord_embed
@@ -185,8 +186,11 @@ def cmd_award(args) -> None:
         weekly = json.load(f)
     track = weekly.get("track")
     state = db.load_state()
-    res = points.award_week(track, state)
-    print(f"Απονεμήθηκαν πόντοι για «{track}»: {sum(len(r['results']) for r in res)} εγγραφές")
+    res = points.award_week(track, state, force=getattr(args, "force_award", False))
+    if res:
+        print(f"Απονεμήθηκαν πόντοι για «{track}»: {sum(len(r['results']) for r in res)} εγγραφές")
+    else:
+        print("Δεν απονεμήθηκαν πόντοι (ήδη απονεμημένο ή κενή κατάταξη).")
 
 
 def cmd_standings_reset(args) -> None:
@@ -315,6 +319,8 @@ def main() -> None:
                    help="race mode (default 6 = single class 3 laps)")
     w.add_argument("--no-award", action="store_true",
                    help="χωρίς απονομή πόντων προηγούμενης εβδομάδας")
+    w.add_argument("--force-award", action="store_true",
+                   help="απονομή ακόμα κι αν η προηγούμενη πίστα έχει ήδη βαθμολογηθεί")
     w.add_argument("--no-announce", action="store_true", help="χωρίς ανακοίνωση στο Discord")
     w.set_defaults(func=cmd_week)
 
@@ -342,6 +348,8 @@ def main() -> None:
     st.set_defaults(func=cmd_standings)
 
     aw = sub.add_parser("award", help="απονομή πόντων τρέχουσας πίστας τώρα")
+    aw.add_argument("--force-award", action="store_true",
+                    help="απονομή ακόμα κι αν έχει ήδη γίνει (διπλοί πόντοι!)")
     aw.set_defaults(func=cmd_award)
 
     sr = sub.add_parser("standings-reset", help="μηδενισμός βαθμολογίας (νέα σεζόν)")

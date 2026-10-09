@@ -41,17 +41,24 @@ def points_table() -> list:
 
 def load_standings() -> dict:
     if not os.path.exists(STANDINGS_FILE):
-        return {"classes": {}, "history": []}
+        return {"classes": {}, "history": [], "awarded": []}
     try:
         with open(STANDINGS_FILE, encoding="utf-8") as f:
-            return json.load(f)
+            data = json.load(f)
     except (json.JSONDecodeError, OSError):
-        return {"classes": {}, "history": []}
+        return {"classes": {}, "history": [], "awarded": []}
+    data.setdefault("classes", {})
+    data.setdefault("history", [])
+    data.setdefault("awarded", [])
+    return data
 
 
 def save_standings(data: dict) -> None:
-    with open(STANDINGS_FILE, "w", encoding="utf-8") as f:
+    # atomic write: ποτέ half-written file
+    tmp = STANDINGS_FILE + ".tmp"
+    with open(tmp, "w", encoding="utf-8") as f:
         json.dump(data, f, ensure_ascii=False, indent=2)
+    os.replace(tmp, STANDINGS_FILE)
 
 
 def final_standings_for_track(state: dict, track: str) -> dict:
@@ -67,13 +74,20 @@ def final_standings_for_track(state: dict, track: str) -> dict:
     return result
 
 
-def award_week(track: str, state: dict) -> list:
+def award_week(track: str, state: dict, force: bool = False) -> list:
     """Απονομή πόντων για μια ολοκληρωμένη εβδομάδα.
+
+    IDEMPOTENT: αν η πίστα έχει ήδη απονεμηθεί, επιστρέφει [] χωρίς να δώσει
+    ξανά πόντους (προστασία από διπλό admin.py week / award). Με force=True
+    παρακάμπτεται ο έλεγχος (π.χ. --force-award αν ξέρεις τι κάνεις).
 
     Επιστρέφει λίστα από dicts: {class, results: [(pilot,time,points,medal)], season: [...]}
     """
     table = points_table()
     standings = load_standings()
+    if not force and track in standings.get("awarded", []):
+        print(f"Η «{track}» έχει ήδη απονεμηθεί - παράλειψη (χρησιμοποίησε --force-award για επανάληψη).")
+        return []
     final = final_standings_for_track(state, track)
     out = []
     now = datetime.now().isoformat()
@@ -114,5 +128,9 @@ def award_week(track: str, state: dict) -> list:
         })
         out.append({"class": cls_key, "results": results, "season": season})
 
+    if out:   # μόνο αν πραγματικά απονεμήθηκαν πόντοι
+        awarded = standings.setdefault("awarded", [])
+        if track not in awarded:
+            awarded.append(track)
     save_standings(standings)
     return out
