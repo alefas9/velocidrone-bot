@@ -32,6 +32,21 @@ def _enrich_hist(h: dict) -> dict:
     return h
 
 
+def _quad_of(key: str) -> str:
+    """Όνομα quad από το κλειδί εγγραφής 'πιλότος|μοντέλο'.
+
+    Επιστρέφει "" αν δεν υπάρχει μοντέλο (κενό/None) ή αν είναι αριθμητικό
+    id χωρίς όνομα - το site τότε δεν εμφανίζει τίποτα.
+    """
+    parts = key.split("|", 1)
+    if len(parts) > 1:
+        quad = parts[1].strip()
+        # αριθμητικό model_id (π.χ. "59") δεν είναι εμφανίσιμο όνομα
+        if quad and quad != "None" and not quad.isdigit():
+            return quad
+    return ""
+
+
 def export(path: str = "site_data.json") -> dict:
     state = db.load_state()
     standings = points.load_standings()
@@ -50,11 +65,11 @@ def export(path: str = "site_data.json") -> dict:
             best = {}
             for key, t in entries.items():
                 pilot = key.split("|")[0]
-                if pilot not in best or t < best[pilot]:
-                    best[pilot] = t
+                if pilot not in best or t < best[pilot][0]:
+                    best[pilot] = (t, _quad_of(key))
             current[cls or "other"] = [
-                {"pilot": p, "time": t} for p, t in
-                sorted(best.items(), key=lambda kv: kv[1])
+                {"pilot": p, "time": t, "quad": q} for p, (t, q) in
+                sorted(best.items(), key=lambda kv: kv[1][0])
             ]
 
     # βαθμολογία σεζόν ανά κλάση
