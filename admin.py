@@ -50,6 +50,32 @@ def cmd_recap(args) -> None:
     print(text)
 
 
+def _award_and_announce(track: str, state, force: bool = False) -> list:
+    """Απονομή πόντων + ανακοίνωση embeds στο Discord.
+
+    Επιστρέφει τα results (κενή λίστα αν ήδη απονεμήθηκε/κενή κατάταξη).
+    Χρησιμοποιείται από week (μέσω _maybe_award_previous) και week-stop.
+    """
+    import points
+    results = points.award_week(track, state, force=force)
+    if not results:
+        return []
+    from discord_notify import send_discord_embed
+    for r in results:
+        lines = [f"{m} **{pl}**  {t:.3f}s  (+{p})" for pl, t, p, m in r["results"]]
+        send_discord_embed(
+            title=f"🏆 Εβδομάδα ολοκληρώθηκε: «{track}» [{r['class']}]",
+            description="\n".join(lines) if lines else "(κενή κατάταξη)",
+        )
+        season_lines = [f"**{i+1}.** {pl} — {p} βαθμοί" for i, (pl, p) in enumerate(r["season"][:10])]
+        send_discord_embed(
+            title=f"📊 Βαθμολογία σεζόν [{r['class']}]",
+            description="\n".join(season_lines),
+            color=0x3498DB,
+        )
+    return results
+
+
 def _maybe_award_previous(args) -> None:
     """Αν υπήρχε προηγούμενη πίστα, απονομή πόντων πριν την αντικατάσταση."""
     import json, os
@@ -64,30 +90,14 @@ def _maybe_award_previous(args) -> None:
     if not prev_track or prev_track == getattr(args, "track", None):
         return  # δεν υπήρχε προηγούμενη ή ίδια πίστα
     import db
-    import points
     state = db.load_state()
     if prev_track not in state.get("tracks", {}):
         print(f"(δεν βρέθηκαν δεδομένα για την προηγούμενη πίστα «{prev_track}» - παράλειψη απονομής)")
         return
-    results = points.award_week(prev_track, state,
-                                force=getattr(args, "force_award", False))
-    if not results:
-        return
-    from discord_notify import send_discord_embed
-    from messages import pick
-    for r in results:
-        lines = [f"{m} **{pl}**  {t:.3f}s  (+{p})" for pl, t, p, m in r["results"]]
-        send_discord_embed(
-            title=f"🏆 Εβδομάδα ολοκληρώθηκε: «{prev_track}» [{r['class']}]",
-            description="\n".join(lines) if lines else "(κενή κατάταξη)",
-        )
-        season_lines = [f"**{i+1}.** {pl} — {p} βαθμοί" for i, (pl, p) in enumerate(r["season"][:10])]
-        send_discord_embed(
-            title=f"📊 Βαθμολογία σεζόν [{r['class']}]",
-            description="\n".join(season_lines),
-            color=0x3498DB,
-        )
-    print(f"Απονεμήθηκαν πόντοι για «{prev_track}» ({len(results)} κλάσεις)")
+    results = _award_and_announce(prev_track, state,
+                                  force=getattr(args, "force_award", False))
+    if results:
+        print(f"Απονεμήθηκαν πόντοι για «{prev_track}» ({len(results)} κλάσεις)")
 
 
 def cmd_duel_list(args) -> None:
@@ -293,11 +303,12 @@ def cmd_week_stop(args) -> None:
         return
 
     state = db.load_state()
-    results = points.award_week(track, state,
-                                force=getattr(args, "force_award", False))
+    results = _award_and_announce(track, state,
+                                  force=getattr(args, "force_award", False))
     if results:
         total = sum(len(r["results"]) for r in results)
-        print(f"🏆 Απονεμήθηκαν πόντοι για «{track}»: {total} εγγραφές")
+        print(f"🏆 Απονεμήθηκαν πόντοι για «{track}»: {total} εγγραφές "
+              f"(embeds στο Discord)")
     else:
         print("Δεν απονεμήθηκαν πόντοι (ήδη απονεμημένο ή κενή κατάταξη).")
 
