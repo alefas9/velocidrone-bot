@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-10-11T02:45:02.787088",
+  "generated_at": "2026-10-11T02:50:02.900875",
   "season": 2026,
   "current_track": "SimRushWeek2",
   "current_leaderboard": {
@@ -10,13 +10,13 @@
         "quad": "Bahamut"
       },
       {
-        "pilot": "Agorastos",
-        "time": 191.125,
+        "pilot": "dimbazus",
+        "time": 179.988,
         "quad": "Bahamut"
       },
       {
-        "pilot": "dimbazus",
-        "time": 191.737,
+        "pilot": "Agorastos",
+        "time": 191.125,
         "quad": "Bahamut"
       }
     ]
