@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-10-11T01:45:02.762724",
+  "generated_at": "2026-10-11T01:50:03.185661",
   "season": 2026,
   "current_track": "SimRushWeek2",
   "current_leaderboard": {
@@ -150,7 +150,19 @@
       "winner": "Exo_FPV",
       "best_time": 38.31,
       "pilots_count": 10,
-      "records_broken": 67
+      "records_broken": 67,
+      "quads": {
+        "Exo_FPV": "Bahamut",
+        "anthunder": "Bahamut",
+        "ZOUP": "Five33 Switchback",
+        "TettixPro": "Bahamut",
+        "DedalosFPV": "Bahamut",
+        "tomahok": "Five33 Switchback",
+        "Liapos": "Bahamut",
+        "dimbazus": "SniperX",
+        "Agorastos": "Bahamut",
+        "fpvchucky": "Bahamut"
+      }
     }
   ],
   "duels": []
