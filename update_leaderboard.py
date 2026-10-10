@@ -48,6 +48,12 @@ def _get_weekly():
 def load_tracks(tracks_dir: str, source: str) -> dict:
     """Επιλογή πηγής: api (Velocidrone Open API) > web > csv."""
     weekly = _get_weekly()
+    # Η εβδομάδα έχει κλείσει (admin.py week-stop) - αναμονή νέας πίστας.
+    # Οι πόντοι έχουν ήδη απονεμηθεί, οπότε οι νέοι χρόνοι δεν μετράνε.
+    if weekly and weekly.get("ended"):
+        print(f"⏸ Εβδομάδα έκλεισε («{weekly.get('track')}») - αναμονή νέας πίστας "
+              f"(admin.py week). Νέοι χρόνοι δεν καταγράφονται.")
+        return {}
     if source in ("auto", "api") and weekly and weekly.get("track_id"):
         from velocidrone_api import fetch_leaderboard
         track_id = int(weekly["track_id"])

@@ -267,6 +267,47 @@ def cmd_quad(args) -> None:
             print(f"  {mid}: {mapping[mid]}")
 
 
+def cmd_week_stop(args) -> None:
+    """Κλείνει την τρέχουσα εβδομάδα ΧΩΡΙΣ νέα πίστα.
+
+    - Απονέμει πόντους για την τρέχουσα πίστα (idempotent - ασφαλές σε επανάληψη)
+    - Ο scanner παγώνει: νέοι χρόνοι ΔΕΝ καταγράφονται/ανακοινώνονται
+    - Το site συνεχίζει να δείχνει την τελική κατάταξη
+    - Όταν είναι έτοιμη η νέα πίστα: admin.py week ... (ξεπαγώνει αυτόματα)
+    """
+    import json, os
+    import db, points
+    from config import WEEKLY_TRACK_FILE
+
+    if not os.path.exists(WEEKLY_TRACK_FILE):
+        print("Δεν υπάρχει ενεργή πίστα εβδομάδας.")
+        return
+    with open(WEEKLY_TRACK_FILE, encoding="utf-8") as f:
+        weekly = json.load(f)
+    track = weekly.get("track")
+    if not track:
+        print("Δεν υπάρχει ενεργή πίστα εβδομάδας.")
+        return
+    if weekly.get("ended"):
+        print(f"Η εβδομάδα «{track}» έχει ήδη κλείσει - αναμονή νέας πίστας.")
+        return
+
+    state = db.load_state()
+    results = points.award_week(track, state,
+                                force=getattr(args, "force_award", False))
+    if results:
+        total = sum(len(r["results"]) for r in results)
+        print(f"🏆 Απονεμήθηκαν πόντοι για «{track}»: {total} εγγραφές")
+    else:
+        print("Δεν απονεμήθηκαν πόντοι (ήδη απονεμημένο ή κενή κατάταξη).")
+
+    weekly["ended"] = True
+    with open(WEEKLY_TRACK_FILE, "w", encoding="utf-8") as f:
+        json.dump(weekly, f, ensure_ascii=False, indent=2)
+    print(f"⏸ Εβδομάδα «{track}» έκλεισε. Ο scanner παγώνει μέχρι την επόμενη "
+          f"(admin.py week).")
+
+
 def cmd_week(args) -> None:
     """Ο admin ανακοινώνει την πίστα της εβδομάδας (csv mode - community tracks).
 
@@ -281,6 +322,7 @@ def cmd_week(args) -> None:
         _maybe_award_previous(args)
         data = {"track": args.track, "track_id": int(args.track_id),
                 "race_mode": int(args.race_mode),
+                "ended": False,   # νέα εβδομάδα - καθαρό ξεκίνημα (βλ. week-stop)
                 "set_at": datetime.datetime.now().isoformat()}
         with open(WEEKLY_TRACK_FILE, "w", encoding="utf-8") as f:
             json.dump(data, f, ensure_ascii=False, indent=2)
@@ -370,6 +412,12 @@ def main() -> None:
 
     wc = sub.add_parser("week-clear", help="καθαρισμός πίστας εβδομάδας")
     wc.set_defaults(func=cmd_week_clear)
+
+    ws = sub.add_parser("week-stop", help="κλείσιμο εβδομάδας ΧΩΡΙΣ νέα πίστα "
+                                           "(απονομή πόντων + πάγωμα scanner)")
+    ws.add_argument("--force-award", action="store_true",
+                    help="απονομή ακόμα κι αν έχει ήδη γίνει (διπλοί πόντοι!)")
+    ws.set_defaults(func=cmd_week_stop)
 
     m = sub.add_parser("model", help="χάρτης model_id -> κλάση (5inch/whoop/...)")
     m.add_argument("model_id", help="το model_id από το API (π.χ. 123) ή 'list'")
