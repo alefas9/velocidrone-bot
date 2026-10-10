@@ -1,8 +1,16 @@
 {
-  "generated_at": "2026-10-11T00:25:02.214590",
+  "generated_at": "2026-10-11T00:30:02.315727",
   "season": 2026,
   "current_track": "SimRushWeek2",
-  "current_leaderboard": {},
+  "current_leaderboard": {
+    "5inch": [
+      {
+        "pilot": "Agorastos",
+        "time": 257.666,
+        "quad": ""
+      }
+    ]
+  },
   "season_standings": {
     "5inch": [
       {
