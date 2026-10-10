@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-10-11T00:05:02.203164",
+  "generated_at": "2026-10-11T00:10:02.189089",
   "season": 2026,
   "current_track": "SimRush Week1",
   "current_leaderboard": {
@@ -56,7 +56,142 @@
       }
     ]
   },
-  "season_standings": {},
-  "history": [],
+  "season_standings": {
+    "5inch": [
+      {
+        "pilot": "Exo_FPV",
+        "points": 25,
+        "wins": 1,
+        "podiums": 1,
+        "best": 38.31
+      },
+      {
+        "pilot": "anthunder",
+        "points": 18,
+        "wins": 0,
+        "podiums": 1,
+        "best": 38.87
+      },
+      {
+        "pilot": "ZOUP",
+        "points": 15,
+        "wins": 0,
+        "podiums": 1,
+        "best": 41.353
+      },
+      {
+        "pilot": "TettixPro",
+        "points": 12,
+        "wins": 0,
+        "podiums": 0,
+        "best": 44.709
+      },
+      {
+        "pilot": "DedalosFPV",
+        "points": 10,
+        "wins": 0,
+        "podiums": 0,
+        "best": 50.564
+      },
+      {
+        "pilot": "tomahok",
+        "points": 8,
+        "wins": 0,
+        "podiums": 0,
+        "best": 66.467
+      },
+      {
+        "pilot": "Liapos",
+        "points": 6,
+        "wins": 0,
+        "podiums": 0,
+        "best": 70.629
+      },
+      {
+        "pilot": "dimbazus",
+        "points": 4,
+        "wins": 0,
+        "podiums": 0,
+        "best": 71.886
+      },
+      {
+        "pilot": "Agorastos",
+        "points": 2,
+        "wins": 0,
+        "podiums": 0,
+        "best": 77.166
+      },
+      {
+        "pilot": "fpvchucky",
+        "points": 1,
+        "wins": 0,
+        "podiums": 0,
+        "best": 160.283
+      }
+    ]
+  },
+  "history": [
+    {
+      "date": "2026-10-11T00:07:15.960303",
+      "track": "SimRush Week1",
+      "class": "5inch",
+      "results": [
+        {
+          "pilot": "Exo_FPV",
+          "time": 38.31,
+          "points": 25
+        },
+        {
+          "pilot": "anthunder",
+          "time": 38.87,
+          "points": 18
+        },
+        {
+          "pilot": "ZOUP",
+          "time": 41.353,
+          "points": 15
+        },
+        {
+          "pilot": "TettixPro",
+          "time": 44.709,
+          "points": 12
+        },
+        {
+          "pilot": "DedalosFPV",
+          "time": 50.564,
+          "points": 10
+        },
+        {
+          "pilot": "tomahok",
+          "time": 66.467,
+          "points": 8
+        },
+        {
+          "pilot": "Liapos",
+          "time": 70.629,
+          "points": 6
+        },
+        {
+          "pilot": "dimbazus",
+          "time": 71.886,
+          "points": 4
+        },
+        {
+          "pilot": "Agorastos",
+          "time": 77.166,
+          "points": 2
+        },
+        {
+          "pilot": "fpvchucky",
+          "time": 160.283,
+          "points": 1
+        }
+      ],
+      "winner": "Exo_FPV",
+      "best_time": 38.31,
+      "pilots_count": 10,
+      "records_broken": 67
+    }
+  ],
   "duels": []
 }
