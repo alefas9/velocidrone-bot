@@ -35,15 +35,19 @@ def _enrich_hist(h: dict) -> dict:
 def _quad_of(key: str) -> str:
     """Όνομα quad από το κλειδί εγγραφής 'πιλότος|μοντέλο'.
 
-    Επιστρέφει "" αν δεν υπάρχει μοντέλο (κενό/None) ή αν είναι αριθμητικό
-    id χωρίς όνομα - το site τότε δεν εμφανίζει τίποτα.
+    - Αν το μοντέλο είναι κείμενο -> επιστρέφεται ως έχει.
+    - Αν είναι αριθμητικό model_id -> μετάφραση μέσω quad_names.json
+      (ορίζεται με: python3 admin.py quad <id> "<όνομα>").
+    - Αλλιώς (κενό/None/άγνωστο id) -> "" (το site δεν εμφανίζει τίποτα).
     """
     parts = key.split("|", 1)
     if len(parts) > 1:
         quad = parts[1].strip()
-        # αριθμητικό model_id (π.χ. "59") δεν είναι εμφανίσιμο όνομα
-        if quad and quad != "None" and not quad.isdigit():
-            return quad
+        if quad and quad != "None":
+            if not quad.isdigit():
+                return quad
+            import quad_names
+            return quad_names.get_name(quad)
     return ""
 
 

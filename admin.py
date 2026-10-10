@@ -223,6 +223,50 @@ def cmd_model(args) -> None:
         print(f"✓ model_id {args.model_id} -> {args.cls} (model_classes.json)")
 
 
+def cmd_quad(args) -> None:
+    """Χάρτης model_id -> όνομα quad (persisted, για site/Discord).
+
+    Χρήση:
+      python3 admin.py quad                 # προβολή χάρτη
+      python3 admin.py quad scan            # όλα τα ids στο state + πιλότοι
+      python3 admin.py quad 123 "Five33 Switchback"   # ορισμός ενός
+    """
+    import quad_names
+    if args.model_id == "scan":
+        import db
+        state = db.load_state()
+        ids = {}
+        for track, classes in state.get("tracks", {}).items():
+            for cls, entries in classes.items():
+                for key in entries:
+                    parts = key.split("|", 1)
+                    if len(parts) > 1 and parts[1].strip().isdigit():
+                        ids.setdefault(parts[1].strip(), set()).add(parts[0])
+        mapping = quad_names.load()
+        print("model_ids στο leaderboard και ποιοι τα πετούν:")
+        if not ids:
+            print("  (κανένα - το state είναι κενό)")
+        for mid in sorted(ids, key=int):
+            name = mapping.get(mid, "")
+            tag = name if name else "(ΧΩΡΙΣ ΟΝΟΜΑ)"
+            print(f"  {mid}: {tag}   <- {', '.join(sorted(ids[mid]))}")
+        missing = [m for m in ids if m not in mapping]
+        if missing:
+            print(f"\nΧωρίς όνομα: {', '.join(missing)}")
+            print('Ορίστε τα: python3 admin.py quad <id> "<όνομα>"')
+        return
+    if args.model_id is not None and args.name:
+        quad_names.set_name(args.model_id, args.name)
+        print(f"✓ model_id {args.model_id} -> «{args.name}» (quad_names.json)")
+    mapping = quad_names.load()
+    print("\nΧάρτης model_id -> όνομα quad:")
+    if not mapping:
+        print('  (κενός - ορίστε με: python3 admin.py quad <id> "<όνομα>")')
+    else:
+        for mid in sorted(mapping, key=lambda x: int(x)):
+            print(f"  {mid}: {mapping[mid]}")
+
+
 def cmd_week(args) -> None:
     """Ο admin ανακοινώνει την πίστα της εβδομάδας (csv mode - community tracks).
 
@@ -331,6 +375,13 @@ def main() -> None:
     m.add_argument("model_id", help="το model_id από το API (π.χ. 123) ή 'list'")
     m.add_argument("cls", nargs="?", default=None, help="κλάση (5inch/whoop) - μόνο για ορισμό")
     m.set_defaults(func=cmd_model)
+
+    qn = sub.add_parser("quad", help="χάρτης model_id -> όνομα quad (για site/Discord)")
+    qn.add_argument("model_id", nargs="?", default=None,
+                    help="το model_id (π.χ. 123) - κενό για προβολή χάρτη")
+    qn.add_argument("name", nargs="?", default=None,
+                    help="όνομα quad σε εισαγωγικά (π.χ. \"Five33 Switchback\")")
+    qn.set_defaults(func=cmd_quad)
 
     tg = sub.add_parser("test-gif", help="self-test GIF -> αποτελέσματα στο admin κανάλι")
     tg.set_defaults(func=cmd_test_gif)
