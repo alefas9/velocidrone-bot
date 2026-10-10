@@ -20,7 +20,7 @@ import db
 import points
 
 
-def _enrich_hist(h: dict) -> dict:
+def _enrich_hist(h: dict, tracks_state: dict = None) -> dict:
     """Συμπλήρωση πεδίων για παλιότερα history entries (που τα λείπουν)."""
     h = dict(h)
     results = h.get("results", [])
@@ -29,6 +29,20 @@ def _enrich_hist(h: dict) -> dict:
         h.setdefault("best_time", results[0].get("time"))
         h.setdefault("pilots_count", len(results))
     h.setdefault("records_broken", 0)
+    if tracks_state is not None:
+        quads = {}
+        entries = tracks_state.get(h.get("track", ""), {})
+        best = {}
+        for cls_entries in entries.values():
+            for key, t in cls_entries.items():
+                pilot = key.split("|")[0]
+                if pilot not in best or t < best[pilot][0]:
+                    best[pilot] = (t, _quad_of(key))
+        for r in results:
+            pilot = r.get("pilot")
+            if pilot in best and best[pilot][1]:
+                quads[pilot] = best[pilot][1]
+        h["quads"] = quads
     return h
 
 
@@ -167,7 +181,8 @@ def export(path: str = "site_data.json") -> dict:
         "current_track": track,
         "current_leaderboard": current,
         "season_standings": season,
-        "history": [_enrich_hist(h) for h in standings.get("history", [])[-20:]],
+        "history": [_enrich_hist(h, state.get("tracks", {}))
+                    for h in standings.get("history", [])[-20:]],
         "duels": active_duels,                            # ενεργά duels
     }
     with open(path, "w", encoding="utf-8") as f:
