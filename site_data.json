@@ -1,8 +1,26 @@
 {
-  "generated_at": "2026-10-11T19:45:02.689953",
+  "generated_at": "2026-10-11T19:50:02.947561",
   "season": 2026,
   "current_track": "SimRushWeek2",
-  "current_leaderboard": {},
+  "current_leaderboard": {
+    "5inch": [
+      {
+        "pilot": "Exo_FPV",
+        "time": 81.415,
+        "quad": "Bahamut"
+      },
+      {
+        "pilot": "ZOUP",
+        "time": 90.401,
+        "quad": "Bahamut"
+      },
+      {
+        "pilot": "Agorastos",
+        "time": 233.977,
+        "quad": "Bahamut"
+      }
+    ]
+  },
   "season_standings": {
     "5inch": [
       {
