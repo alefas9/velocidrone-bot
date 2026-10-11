@@ -277,6 +277,52 @@ def cmd_quad(args) -> None:
             print(f"  {mid}: {mapping[mid]}")
 
 
+def cmd_week_fix(args) -> None:
+    """Επανα-ανέβασμα ίδιας πίστας (διόρθωση layout) - καθαρό leaderboard.
+
+    ΧΡΗΣΗ (μετά από νέο upload της διορθωμένης πίστας στο Velocidrone):
+      python3 admin.py week-fix "SimRushWeek2" --track-id <ΝΕΟ_ID>
+
+    Κάνει ΜΟΝΟ του:
+    1. Ενημερώνει το track_id (το όνομα παραμένει ίδιο -> χωρίς απονομή πόντων,
+       η εβδομάδα συνεχίζει κανονικά)
+    2. Backup του state.json (.bak-fix)
+    3. Καθαρίζει τους παλιούς χρόνους της πίστας (ήταν στη λάθος διαδρομή)
+    4. Ανακοίνωση στο Discord (μπορεί να απενεργοποιηθεί με --no-announce)
+
+    Η επόμενη σάρωση κάνει φρέσκο σιωπηλό import.
+    """
+    import json
+    import shutil
+
+    import db
+    from config import STATE_FILE, WEEKLY_TRACK_FILE
+
+    # 1. νέο id, ίδιο όνομα - η εβδομάδα συνεχίζει
+    data = {"track": args.track, "track_id": int(args.track_id),
+            "race_mode": int(args.race_mode), "ended": False,
+            "set_at": datetime.datetime.now().isoformat()}
+    with open(WEEKLY_TRACK_FILE, "w", encoding="utf-8") as f:
+        json.dump(data, f, ensure_ascii=False, indent=2)
+
+    # 2. backup + καθαρισμός παλιών χρόνων της πίστας
+    shutil.copy(STATE_FILE, STATE_FILE + ".bak-fix")
+    state = db.load_state()
+    removed = state.get("tracks", {}).pop(args.track, None)
+    db.save_state(state)
+    n = sum(len(v) for v in removed.values()) if removed else 0
+
+    print(f"🔧 Πίστα εβδομάδας: «{args.track}» -> νέο id {args.track_id}")
+    print(f"🧹 Καθαρίστηκαν {n} παλιές εγγραφές (backup: {STATE_FILE}.bak-fix)")
+    print("Η επόμενη σάρωση (≤5') θα κάνει φρέσκο import της διορθωμένης πίστας.")
+
+    if not getattr(args, "no_announce", False):
+        from discord_notify import send_discord_message
+        send_discord_message(
+            f"🔧 Η πίστα «{args.track}» διορθώθηκε! Οι προηγούμενοι χρόνοι "
+            f"μηδενίστηκαν (ήταν στη λάθος έκδοση) - όλοι ξανά από το #1! 🏁")
+
+
 def cmd_week_stop(args) -> None:
     """Κλείνει την τρέχουσα εβδομάδα ΧΩΡΙΣ νέα πίστα.
 
@@ -423,6 +469,15 @@ def main() -> None:
 
     wc = sub.add_parser("week-clear", help="καθαρισμός πίστας εβδομάδας")
     wc.set_defaults(func=cmd_week_clear)
+
+    wf = sub.add_parser("week-fix", help="επανα-ανέβασμα ίδιας πίστας (διόρθωση) "
+                                          "- νέο id, καθαρός πίνακας χρόνων")
+    wf.add_argument("track", help="το ΙΔΙΟ όνομα της πίστας")
+    wf.add_argument("--track-id", type=int, required=True, help="το ΝΕΟ track_id")
+    wf.add_argument("--race-mode", type=int, default=6)
+    wf.add_argument("--no-announce", action="store_true",
+                    help="χωρίς ανακοίνωση στο Discord")
+    wf.set_defaults(func=cmd_week_fix)
 
     ws = sub.add_parser("week-stop", help="κλείσιμο εβδομάδας ΧΩΡΙΣ νέα πίστα "
                                            "(απονομή πόντων + πάγωμα scanner)")
