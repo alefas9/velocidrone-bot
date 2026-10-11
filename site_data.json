@@ -1,36 +1,8 @@
 {
-  "generated_at": "2026-10-11T19:40:02.815813",
+  "generated_at": "2026-10-11T19:45:02.689953",
   "season": 2026,
   "current_track": "SimRushWeek2",
-  "current_leaderboard": {
-    "5inch": [
-      {
-        "pilot": "Exo_FPV",
-        "time": 81.959,
-        "quad": "Bahamut"
-      },
-      {
-        "pilot": "ZOUP",
-        "time": 102.83,
-        "quad": "Bahamut"
-      },
-      {
-        "pilot": "DedalosFPV",
-        "time": 106.59,
-        "quad": "Bahamut"
-      },
-      {
-        "pilot": "dimbazus",
-        "time": 160.438,
-        "quad": "Bahamut"
-      },
-      {
-        "pilot": "Agorastos",
-        "time": 191.125,
-        "quad": "Bahamut"
-      }
-    ]
-  },
+  "current_leaderboard": {},
   "season_standings": {
     "5inch": [
       {
