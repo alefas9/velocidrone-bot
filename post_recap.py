@@ -95,7 +95,7 @@ def main() -> None:
     for cls, pilots in st.get("classes", {}).items():
         if not pilots:
             continue
-        season = sorted(pilots.items(), key=lambda kv: -kv[1]["points"])[:5]
+        season = sorted(pilots.items(), key=lambda kv: -kv[1]["points"])[:10]
         slines = [f"{medals.get(i, f'**{i+1}.**')} {p} — **{d['points']}** πόντοι"
                   for i, (p, d) in enumerate(season)]
         send_discord_embed(
