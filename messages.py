@@ -70,15 +70,38 @@ CALL_TO_ACTION = [
     "Η πίστα γελάει με τους διστακτικούς! 😏",
 ]
 
-# ---- Curated GIF (προαιρετικό) ----
-# Βάλε εδώ links ΣΕΛΙΔΩΝ giphy.com/gifs/... (ΟΧΙ media/v1.Y2lk URLs - δεν κάνουν
-# unfurl το Discord). Αν μείνουν κενές οι λίστες, το bot κατεβάζει αυτόματα
-# ένα GIF από την Giphy API και το στέλνει ως συνημμένο (παίζει πάντα).
+# ============================================================================
+# 👇 CURATED GIF — ΕΔΩ ΚΑΝΕ ΕΠΙΚΟΛΛΗΣΗ ΤΩΝ ΔΙΚΩΝ ΣΟΥ LINKS 👇
+# ============================================================================
+# ΠΩΣ ΒΡΙΣΚΩ LINK: giphy.com → άνοιξε το GIF → Share → Copy Link →
+#   θέλει το link της ΣΕΛΙΔΑΣ (https://giphy.com/gifs/...)
+#   ΟΧΙ το "media.../v1.Y2lk..." link (αυτό ΔΕΝ κάνει unfurl στο Discord)!
+#
+# ΠΩΣ ΔΟΥΛΕΥΕΙ: μόλις υπάρχει τουλάχιστον 1 link, το bot στέλνει:
+#   50% -> ένα από ΑΥΤΑ τα δικά σου (link σελίδας, unfurl πάντα)
+#   50% -> τυχαίο GIF από Giphy API (κατέβασμα + συνημμένο)
+# ΑΝ ΜΕΙΝΟΥΝ ΚΕΝΑ: δουλεύει μόνο η αυτόματη αναζήτηση (όπως τώρα).
+#
+# ΣΥΝΤΑΞΗ: ένα link ανά γραμμή, μέσα σε εισαγωγικά, με κόμμα στο τέλος.
+# ============================================================================
+
+# 🏆 ΓΙΑ ΝΕΟ ΚΟΡΥΦΑΙΟ ΡΕΚΟΡ (νέο #1):
 GIF_NEW_TOP = [
-    # "https://giphy.com/gifs/xxxx",
+    "https://giphy.com/gifs/Drone-Racing-League-drone-racing-drl-JO4Or4DR5VlbaO85Hi",
+    "https://giphy.com/gifs/Drone-Racing-League-drone-racing-drl-IbsNGyWdGz7WS0sZ8i",
+    "https://giphy.com/gifs/Drone-Racing-League-drone-racing-drl-VJIGXEiSpc43bW9mP5",
+    "https://giphy.com/gifs/Drone-Racing-League-drone-racing-drl-league-eHGIMD3ecmdijkwQFv",
+    "https://giphy.com/gifs/Drone-Racing-League-drone-racing-drl-league-ekMwt6BKzunZGix6yu",
+    "https://giphy.com/gifs/Drone-Racing-League-drone-racing-drl-league-TL1E6Pzdu9L3dbuAhI",
 ]
+
+# 😎 ΓΙΑ ΠΡΟΣΩΠΙΚΟ ΡΕΚΟΡ (βελτίωση χρόνου):
 GIF_PERSONAL = [
-    # "https://giphy.com/gifs/xxxx",
+    "https://giphy.com/gifs/drone-fpv-rising-sun-xrovVY4hJ4qJLYhDh2",
+    "https://giphy.com/gifs/producthunt-drone-racing-game-xT8qB0ClnzeIDnVgRy",
+    "https://giphy.com/gifs/Drone-Racing-League-jet-fpv-jetfpv-ZXkbthlmHXwMButLrv",
+    "https://giphy.com/gifs/Drone-Racing-League-drone-racing-drl-league-WrlnmtWrit9fbgZt3d",
+    "https://giphy.com/gifs/Drone-Racing-League-drone-racing-drl-XaADXVXdNZkgpE55zt",
 ]
 
 # ---- Teaser κλειστής μάχης ----
