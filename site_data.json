@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-10-12T23:45:02.572066",
+  "generated_at": "2026-10-12T23:50:02.564504",
   "season": 2026,
   "current_track": "SimRushWeek2",
   "current_leaderboard": {
@@ -25,14 +25,14 @@
         "quad": "Five33 Switchback"
       },
       {
+        "pilot": "Agorastos",
+        "time": 137.682,
+        "quad": "BetaFPV 75x"
+      },
+      {
         "pilot": "dimbazus",
         "time": 141.878,
         "quad": "Bahamut"
-      },
-      {
-        "pilot": "Agorastos",
-        "time": 143.249,
-        "quad": "BetaFPV 75x"
       },
       {
         "pilot": "tomahok",
