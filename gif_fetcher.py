@@ -82,14 +82,36 @@ def fetch_gif(query: str) -> str:
     return (info or {}).get("page", "")
 
 
-# Έτοιμα query-sets ανά event
-QUERIES_NEW_TOP = ["fpv drone racing", "drone fast fly", "speedometer fast", "rocket launch"]
-QUERIES_PERSONAL = ["fpv drone", "drone flying", "quadcopter"]
-QUERIES_RACE_FINISH = ["race flag win", "victory celebration", "champion"]
-QUERIES_DUEL = ["versus fight", "boxing match", "epic battle"]
-QUERIES_TEASER = ["close race", "neck and neck", "drone chase"]
-QUERIES_WEEK = ["new adventure begin", "race track start", "fpv freestyle"]
-QUERIES_RACE_START = ["race start lights", "green light go", "engines start"]
+# Έτοιμα query-sets ανά event (ποικιλία: κάθε query = διαφορετική δεξαμενή GIF)
+QUERIES_NEW_TOP = [
+    "fpv drone racing", "drone fast fly", "speedometer fast", "rocket launch",
+    "hyperspace jump", "lightning fast", "jet afterburner", "drone acro",
+    "top speed", "supersonic",
+]
+QUERIES_PERSONAL = [
+    "fpv drone", "drone flying", "quadcopter", "drone freestyle",
+    "drone pilot view", "mini drone fpv", "drone cinematic", "propeller spin",
+]
+QUERIES_RACE_FINISH = [
+    "race flag win", "victory celebration", "champion", "checkered flag",
+    "confetti win", "podium celebration", "gold medal", "raise the roof",
+]
+QUERIES_DUEL = [
+    "versus fight", "boxing match", "epic battle", "head to head",
+    "face off", "mortal combat", "sword duel", "final showdown",
+]
+QUERIES_TEASER = [
+    "close race", "neck and neck", "drone chase", "photo finish",
+    "so close", "almost there", "catch me if you can", "tight battle",
+]
+QUERIES_WEEK = [
+    "new adventure begin", "race track start", "fpv freestyle", "new chapter",
+    "fresh start", "level up", "on your marks", "game on",
+]
+QUERIES_RACE_START = [
+    "race start lights", "green light go", "engines start", "countdown launch",
+    "ready set go", "lights out and away we go", "start your engines",
+]
 
 
 def gif_for(category: str) -> str:
