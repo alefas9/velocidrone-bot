@@ -87,14 +87,15 @@ def send_discord_embed(title: str, description: str = "", fields: list | None = 
     _post(payload)
 
 
-def send_discord_admin_message(text: str) -> None:
+def send_discord_admin_message(text: str, mentions: list = None) -> None:
     """Μήνυμα στο admin κανάλι (alerts/watchdog). Αν δεν έχει οριστεί,
-    πέφτει πίσω στο κανονικό webhook."""
+    πέφτει πίσω στο κανονικό webhook. Τα mentions περνούν όπως στο
+    send_discord_message (list of user ids)."""
     global DISCORD_WEBHOOK_URL
     if DISCORD_WEBHOOK_ADMIN_URL:
         original, DISCORD_WEBHOOK_URL = DISCORD_WEBHOOK_URL, DISCORD_WEBHOOK_ADMIN_URL
         try:
-            send_discord_message(text)
+            send_discord_message(text, mentions=mentions)
         finally:
             DISCORD_WEBHOOK_URL = original
     else:
