@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-10-13T18:55:03.092532",
+  "generated_at": "2026-10-13T19:00:02.989382",
   "season": 2026,
   "current_track": "SimRushWeek2",
   "current_leaderboard": {
@@ -30,14 +30,14 @@
         "quad": "BetaFPV 75x"
       },
       {
+        "pilot": "tomahok",
+        "time": 140.483,
+        "quad": "Five33 Switchback"
+      },
+      {
         "pilot": "dimbazus",
         "time": 141.878,
         "quad": "Bahamut"
-      },
-      {
-        "pilot": "tomahok",
-        "time": 151.679,
-        "quad": "Five33 Switchback"
       },
       {
         "pilot": "fpvchucky",
