@@ -120,7 +120,11 @@ def announce_record(track, pilot, new_time, is_new_top, entries, cls=None, model
     pool = GIF_NEW_TOP if is_new_top else GIF_PERSONAL
     if pool:
         if random.random() < 0.5:
-            gif = pick(pool)              # link σελίδας giphy.com (unfurl στο Discord)
+            from gif_fetcher import giphy_page_to_media
+            page = pick(pool)
+            # το Discord ΔΕΝ δείχνει HTML σελίδα ως embed image -
+            # μετατροπή σε direct media URL (παίζει inline στο embed)
+            gif = giphy_page_to_media(page) or page
     else:
         info = fetch_gif_full(random.choice(
             QUERIES_NEW_TOP if is_new_top else QUERIES_PERSONAL))

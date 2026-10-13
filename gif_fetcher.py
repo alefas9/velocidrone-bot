@@ -76,6 +76,23 @@ def fetch_gif_full(query: str) -> dict | None:
     return None
 
 
+def giphy_page_to_media(url: str) -> str:
+    """Μετατροπή link ΣΕΛΙΔΑΣ giphy (giphy.com/gifs/...) σε direct media URL.
+
+    Το Discord ΔΕΝ μπορεί να δείξει σελίδα HTML ως embed image - χρειάζεται
+    direct URL εικόνας (media.giphy.com/media/<ID>/giphy.gif), που παίζει
+    inline στο embed. Επιστρέφει "" αν το link δεν είναι αναγνωρίσιμο.
+    """
+    import re
+    m = re.search(r'giphy\.com/gifs/([A-Za-z0-9_-]+)', url or '')
+    if not m:
+        return ""
+    gif_id = m.group(1).split("-")[-1]   # το ID είναι το τελευταίο τμήμα (χωρίς παύλες)
+    if len(gif_id) < 8 or not gif_id.isalnum():
+        return ""
+    return f"https://media.giphy.com/media/{gif_id}/giphy.gif"
+
+
 def fetch_gif(query: str) -> str:
     """URL τυχαίου GIF ή "" αν αποτύχουν όλα."""
     info = fetch_gif_full(query)
