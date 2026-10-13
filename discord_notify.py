@@ -77,7 +77,13 @@ def send_discord_embed(title: str, description: str = "", fields: list | None = 
         _post_with_attachment(payload, attachment, "record.gif")
         return
     if image:
-        payload["content"] = image
+        import re as _re
+        if _re.search(r'\.(gif|png|jpe?g|webp)(\?|#|$)', image, _re.I):
+            # direct media URL -> παίζει ΜΕΣΑ στο embed (animated GIF)
+            embed["image"] = {"url": image}
+        else:
+            # page link -> σκέτο link (τα giphy pages δεν κάνουν πλέον unfurl)
+            payload["content"] = image
     _post(payload)
 
 

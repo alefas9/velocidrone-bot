@@ -77,11 +77,14 @@ def main() -> None:
     # GIF συνοδεία (50%) - θέματα ρεπορτάζ/νέων
     gif = None
     if random.random() < 0.5:
-        from gif_fetcher import fetch_gif
+        from gif_fetcher import fetch_gif, giphy_page_to_media
         gif = fetch_gif(random.choice([
             "news broadcast", "tv report", "breaking news",
             "chart going up", "racing podium", "fpv drone",
         ])) or None
+    if gif:
+        # page link -> direct media URL (αλλιώς το embed δεν το δείχνει)
+        gif = giphy_page_to_media(gif) or gif
 
     send_discord_embed(
         title=f"{pick(RECAP_TITLES)} — «{track}»",

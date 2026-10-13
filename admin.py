@@ -162,7 +162,7 @@ def cmd_test_gif(args) -> None:
     send_discord_admin_embed(
         title="🧪 ΔΟΚΙΜΗ GIF",
         description="Αν βλέπεις GIF να παίζει, όλα δουλεύουν! 🎬",
-        image=info["page"] if not gif_bytes else None,
+        image=info.get("media") if not gif_bytes else None,
         attachment=gif_bytes)
     print("OK - αποτελέσματα στο admin κανάλι")
 
