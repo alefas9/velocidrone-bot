@@ -118,6 +118,8 @@ GIF_CROWN = [
     "https://giphy.com/gifs/YVBC4HdSpB7z2",
     "https://giphy.com/gifs/filmeditor-movie-comedy-3o7buiQeyYFamzRoR2",
     "https://giphy.com/gifs/will-ferrell-its-over-eastbound-and-down-TG080vRGwrNBHPfKo4",
+    "https://giphy.com/gifs/iceman-xUp18pnmmdoK4",
+    "https://giphy.com/gifs/onerepublic-top-gun-maverick-i-aint-worried-Yg7uHTSXVVMrbcknoi",
 ]
 
 # ---- Καλωσόρισμα νέου πιλότου (πρώτη εμφάνιση ποτέ στο bot) ----
