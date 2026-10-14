@@ -89,35 +89,50 @@ def _class_label(cls: str) -> str:
         return cls
 
 
-def announce_record(track, pilot, new_time, is_new_top, entries, cls=None, model=None):
+def announce_record(track, pilot, new_time, is_new_top, entries, cls=None,
+                    model=None, stolen_from=None):
     """Real-time ανακοίνωση νέου ρεκόρ με ποικιλία μηνυμάτων (engagement!).
 
-    GIF: (1) αν έχεις γεμίσει τις curated λίστες GIF_NEW_TOP/GIF_PERSONAL στο
-    messages.py, στέλνει 50% ένα από αυτά ως link (unfurl), (2) αλλιώς κατεβάζει
-    αυτόματα ένα GIF από Giphy API και το στέλνει ως συνημμένο (παίζει ΠΑΝΤΑ).
+    GIF: (1) αν έχεις γεμίσει τις curated λίστες GIF_... στο messages.py,
+    στέλνει 50% ένα από αυτά, (2) αλλιώς κατεβάζει αυτόματα ένα GIF από την
+    Giphy API και το στέλνει ως συνημμένο (παίζει ΠΑΝΤΑ).
+
+    stolen_from: όνομα προηγούμενου leader όταν ο νέος #1 τον ΠΕΡΝΑΕΙ
+    ("κλοπή κορυφής") -> δραματικό μήνυμα + crown GIF.
     """
     import random
     import requests as _rq
-    from messages import NEW_TOP, PERSONAL, CALL_TO_ACTION, pick
-    from gif_fetcher import fetch_gif_full, QUERIES_NEW_TOP, QUERIES_PERSONAL
+    from messages import NEW_TOP, PERSONAL, CALL_TO_ACTION, CROWN_THEFT, pick
+    from gif_fetcher import (fetch_gif_full, QUERIES_NEW_TOP, QUERIES_PERSONAL,
+                             QUERIES_CROWN)
 
     try:
-        from messages import GIF_NEW_TOP, GIF_PERSONAL
+        from messages import GIF_NEW_TOP, GIF_PERSONAL, GIF_CROWN
     except ImportError:
-        GIF_NEW_TOP, GIF_PERSONAL = [], []
+        GIF_NEW_TOP, GIF_PERSONAL, GIF_CROWN = [], [], []
 
     category = get_category(track)
     category_label = themed_day_label(category) if category != "uncategorized" else ""
     cls_label = f"[{_class_label(cls)}] " if cls else ""
 
-    base = pick(NEW_TOP if is_new_top else PERSONAL).format(
-        pilot=f"**{pilot}**", track=track, time=new_time)
+    theft = bool(is_new_top and stolen_from and stolen_from != pilot)
+    if theft:
+        base = pick(CROWN_THEFT).format(
+            pilot=f"**{pilot}**", prev_leader=f"**{stolen_from}**",
+            track=track, time=new_time)
+    else:
+        base = pick(NEW_TOP if is_new_top else PERSONAL).format(
+            pilot=f"**{pilot}**", track=track, time=new_time)
     if random.random() < 0.4:   # 40% πιθανότητα για κρεσέντα engagement
         base += "\n" + pick(CALL_TO_ACTION)
 
     gif = None
     gif_bytes = None
-    pool = GIF_NEW_TOP if is_new_top else GIF_PERSONAL
+    if theft:
+        pool, queries = GIF_CROWN, QUERIES_CROWN
+    else:
+        pool = GIF_NEW_TOP if is_new_top else GIF_PERSONAL
+        queries = QUERIES_NEW_TOP if is_new_top else QUERIES_PERSONAL
     if pool:
         if random.random() < 0.5:
             from gif_fetcher import giphy_page_to_media
@@ -126,8 +141,7 @@ def announce_record(track, pilot, new_time, is_new_top, entries, cls=None, model
             # μετατροπή σε direct media URL (παίζει inline στο embed)
             gif = giphy_page_to_media(page) or page
     else:
-        info = fetch_gif_full(random.choice(
-            QUERIES_NEW_TOP if is_new_top else QUERIES_PERSONAL))
+        info = fetch_gif_full(random.choice(queries))
         if info:
             try:
                 rr = _rq.get(info["media"], timeout=15)
@@ -186,9 +200,14 @@ def scan_once(tracks_dir: str = TRACKS_DIR, source: str = "auto") -> None:
         # πιλότοι που υπήρχαν ήδη στην πίστα ΠΡΙΝ τη σάρωση
         # (για να ξεχωρίζουμε τους ολοκαίνουριους στο bot)
         pre_pilots = set()
-        for ce in known.values():
-            for k in ce:
+        # προηγούμενος leader ανά κλάση (για "κλοπή κορυφής")
+        prev_leaders = {}
+        for cls_key, cls_entries in known.items():
+            for k in cls_entries:
                 pre_pilots.add(k.split("|")[0])
+            if cls_entries:
+                best_key = min(cls_entries, key=lambda kk: cls_entries[kk])
+                prev_leaders[cls_key] = best_key.split("|")[0]
         newcomers = []
         for entry in entries:
             pilot, t = entry["pilot"], entry["time"]
@@ -205,8 +224,14 @@ def scan_once(tracks_dir: str = TRACKS_DIR, source: str = "auto") -> None:
             group = groups.get(cls) or groups.get(None) or entries
             # κορυφαίο ρεκόρ = #1 ΜΕΣΑ στην κλάση του (5inch/whoop ξεχωριστά)
             is_new_top = bool(group) and group[0]["pilot"] == pilot and t <= group[0]["time"] + 1e-9
+            stolen_from = None
+            if is_new_top:
+                pl = prev_leaders.get(cls)
+                if pl and pl != pilot:
+                    stolen_from = pl   # κλοπή κορυφής!
             try:
-                announce_record(track, pilot, t, is_new_top, group, cls or None, entry.get("model"))
+                announce_record(track, pilot, t, is_new_top, group, cls or None,
+                                entry.get("model"), stolen_from=stolen_from)
             except Exception as e:
                 # ΔΕΝ αποθηκεύουμε τον καλύτερο χρόνο -> θα ξανανιχνευθεί
                 # και θα ξανασταλεί στην επόμενη σάρωση (δεν χάνεται η ανακοίνωση)

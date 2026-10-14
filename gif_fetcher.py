@@ -129,6 +129,10 @@ QUERIES_RACE_START = [
     "race start lights", "green light go", "engines start", "countdown launch",
     "ready set go", "lights out and away we go", "start your engines",
 ]
+QUERIES_CROWN = [
+    "crown king", "take the crown", "royal coronation", "usurper throne",
+    "king crown ceremony", "dethroned", "game of thrones crown",
+]
 
 
 def gif_for(category: str) -> str:

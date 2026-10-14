@@ -89,6 +89,32 @@ def main() -> int:
     check("POTW = Nikas +10%", potw and potw[0] == "Nikos" and abs(potw[1] - 10.0) < 0.01,
           str(potw))
 
+    print("F. Κλοπή κορυφής (crown theft)...")
+    for m in ("update_leaderboard", "messages", "gif_fetcher"):
+        if m in sys.modules:
+            del sys.modules[m]
+    import update_leaderboard as ul
+    captured = {}
+
+    def _fake_embed(title=None, description=None, **kw):
+        captured["desc"] = description or ""
+
+    ul.send_discord_embed = _fake_embed
+    import gif_fetcher
+    gif_fetcher.fetch_gif_full = lambda q: None   # χωρίς GIF/δίκτυο
+    ul.announce_record("Week2", "ZOUP", 59.5, True,
+                       [{"pilot": "ZOUP", "time": 59.5}],
+                       cls="5inch", stolen_from="Nikos")
+    check("μήνυμα κλοπής αναφέρει τον προηγούμενο leader",
+          "Nikos" in captured.get("desc", ""),
+          captured.get("desc", "")[:70])
+    ul.announce_record("Week2", "ZOUP", 59.0, True,
+                       [{"pilot": "ZOUP", "time": 59.0}],
+                       cls="5inch", stolen_from=None)
+    check("κανονικό new top χωρίς κλοπή",
+          "Nikos" not in captured.get("desc", ""),
+          captured.get("desc", "")[:70])
+
     print("E. Idempotency απονομής...")
     open(os.path.join(td, "state.json"), "w").write(json.dumps({
         "tracks": {"WT": {"5inch": {"A|1": 60.0, "B|2": 61.0}}},
