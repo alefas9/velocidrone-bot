@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-10-14T20:40:02.888031",
+  "generated_at": "2026-10-14T20:45:03.003625",
   "season": 2026,
   "current_track": "SimRushWeek2",
   "current_leaderboard": {
@@ -13,6 +13,11 @@
         "pilot": "Exo_FPV",
         "time": 78.546,
         "quad": "Bahamut"
+      },
+      {
+        "pilot": "TettixPro",
+        "time": 101.283,
+        "quad": "Five33 Switchback"
       },
       {
         "pilot": "DedalosFPV",
@@ -42,11 +47,6 @@
       {
         "pilot": "Liapos",
         "time": 165.387,
-        "quad": "Bahamut"
-      },
-      {
-        "pilot": "TettixPro",
-        "time": 230.452,
         "quad": "Bahamut"
       },
       {
