@@ -183,6 +183,13 @@ def scan_once(tracks_dir: str = TRACKS_DIR, source: str = "auto") -> None:
             groups = {None: entries}
 
         improved = {}
+        # πιλότοι που υπήρχαν ήδη στην πίστα ΠΡΙΝ τη σάρωση
+        # (για να ξεχωρίζουμε τους ολοκαίνουριους στο bot)
+        pre_pilots = set()
+        for ce in known.values():
+            for k in ce:
+                pre_pilots.add(k.split("|")[0])
+        newcomers = []
         for entry in entries:
             pilot, t = entry["pilot"], entry["time"]
             # classless -> "5inch": το db.py migration μετακινεί την "" κλάση
@@ -192,6 +199,8 @@ def scan_once(tracks_dir: str = TRACKS_DIR, source: str = "auto") -> None:
             old = known.get(cls, {}).get(_entry_key(entry))
             if old is not None and t >= old:
                 continue  # όχι βελτίωση
+            if old is None and pilot not in pre_pilots and pilot not in newcomers:
+                newcomers.append(pilot)   # ολοκαίνουριος στο bot (πρώτη εγγραφή)
 
             group = groups.get(cls) or groups.get(None) or entries
             # κορυφαίο ρεκόρ = #1 ΜΕΣΑ στην κλάση του (5inch/whoop ξεχωριστά)
@@ -230,6 +239,21 @@ def scan_once(tracks_dir: str = TRACKS_DIR, source: str = "auto") -> None:
                 data["chaser"] = to_mention(s["chaser"], mm)
                 ids = [mm[k] for k in (s["leader"].lower(), s["chaser"].lower()) if k in mm]
                 send_discord_message(pick(DUEL_SUGGEST).format(**data), mentions=ids)
+
+            # Καλωσόρισμα ολοκαίνουριου πιλότου (πρώτη εγγραφή ΠΟΤΕ στο bot).
+            # Οι newcomers συλλέχθηκαν στο loop βελτιώσεων (old is None και
+            # δεν υπήρχε πριν στην πίστα). Εδώ φτάνουμε μόνο σε συνεχιζόμενη
+            # εβδομάδα (το first import κάνει continue πιο πάνω) - χωρίς spam.
+            from messages import WELCOME
+            already = set(state.get("welcomed", []))
+            for p in newcomers:
+                if p in already:
+                    continue
+                body = pick(WELCOME).format(pilot=to_mention(p, mm))
+                ids = [mm[p.lower()]] if p.lower() in mm else []
+                send_discord_message(body, mentions=ids)
+                state.setdefault("welcomed", []).append(p)
+                print(f"  🆕 Καλωσόρισμα νέου πιλότου: {p}")
         except Exception as e:
             print(f"  ! σφάλμα στα extras του «{track}» (teaser/duel suggestions): {e}")
 

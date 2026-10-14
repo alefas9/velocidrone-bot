@@ -36,6 +36,7 @@ def load_state() -> dict:
         return {"tracks": {}, "records_log": []}
     state.setdefault("tracks", {})
     state.setdefault("records_log", [])
+    state.setdefault("welcomed", [])   # πιλότοι που καλωσορίστηκαν (μία φορά)
     # migration: παλιά μορφή {track: {pilot: time}} -> {track: {"": {pilot: time}}}
     for track, pilots in state.get("tracks", {}).items():
         if pilots and not isinstance(next(iter(pilots.values())), dict):

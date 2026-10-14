@@ -74,6 +74,34 @@ def final_standings_for_track(state: dict, track: str) -> dict:
     return result
 
 
+def pilot_of_the_week(state: dict, track: str, prev_track: str):
+    """Πιλότος της εβδομάδας = μεγαλύτερη βελτίωση σε σχέση με την προηγούμενη.
+
+    Συγκρίνει τον καλύτερο χρόνο κάθε κοινού πιλότου μεταξύ των δύο πιστών.
+    Επιστρέφει (pilot, improvement_pct, prev_time, now_time) ή None.
+    """
+    if not prev_track or prev_track == track:
+        return None
+
+    def best_times(tr: str) -> dict:
+        out = {}
+        for cls_entries in state.get("tracks", {}).get(tr, {}).values():
+            for key, t in cls_entries.items():
+                pilot = key.split("|")[0]
+                if pilot not in out or t < out[pilot]:
+                    out[pilot] = t
+        return out
+
+    now = best_times(track)
+    prev = best_times(prev_track)
+    best = None
+    for pilot in set(now) & set(prev):
+        improvement = (prev[pilot] - now[pilot]) / prev[pilot] * 100
+        if best is None or improvement > best[1]:
+            best = (pilot, improvement, prev[pilot], now[pilot])
+    return best
+
+
 def award_week(track: str, state: dict, force: bool = False) -> list:
     """Απονομή πόντων για μια ολοκληρωμένη εβδομάδα.
 

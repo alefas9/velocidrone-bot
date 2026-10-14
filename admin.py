@@ -73,6 +73,22 @@ def _award_and_announce(track: str, state, force: bool = False) -> list:
             description="\n".join(season_lines),
             color=0x3498DB,
         )
+
+    # 🌟 Πιλότος της εβδομάδας: μεγαλύτερη βελτίωση σε σχέση με την προηγούμενη
+    history = points.load_standings().get("history", [])
+    prev_track = history[-2].get("track") if len(history) >= 2 else None
+    potw = points.pilot_of_the_week(state, track, prev_track)
+    if potw:
+        pilot, imp, tp, tn = potw
+        send_discord_embed(
+            title="🌟 Πιλότος της εβδομάδας",
+            description=(
+                f"**{pilot}** — μεγαλύτερη βελτίωση σεζόν: "
+                f"**{imp:+.1f}%** ({tp:.3f}s → {tn:.3f}s)\n"
+                f"Σε σχέση με την προηγούμενη εβδομάδα ({prev_track})"
+            ),
+            color=0xF1C40F,
+        )
     return results
 
 
