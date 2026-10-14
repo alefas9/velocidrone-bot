@@ -114,7 +114,10 @@ CROWN_THEFT = [
 
 # Curated GIF για κλοπές κορυφής (προαιρετικό - όπως GIF_NEW_TOP):
 GIF_CROWN = [
-    # "https://giphy.com/gifs/xxxxx",
+    "https://giphy.com/gifs/theoffice-okLCopqw6ElCDnIhuS",
+    "https://giphy.com/gifs/YVBC4HdSpB7z2",
+    "https://giphy.com/gifs/filmeditor-movie-comedy-3o7buiQeyYFamzRoR2",
+    "https://giphy.com/gifs/will-ferrell-its-over-eastbound-and-down-TG080vRGwrNBHPfKo4",
 ]
 
 # ---- Καλωσόρισμα νέου πιλότου (πρώτη εμφάνιση ποτέ στο bot) ----
