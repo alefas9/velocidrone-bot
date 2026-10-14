@@ -28,6 +28,7 @@ FILES = [
     "model_classes.json",
     "weekly_track.json",
     "whitelist.csv",
+    "TASKS.md",          # οδηγός tasks (κύριο αντίγραφο στο git repo)
 ]
 BACKUP_DIR = "backups"
 KEEP_DAYS = 7
