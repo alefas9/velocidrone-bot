@@ -40,11 +40,18 @@ def format_leaderboard_discord_embed_fields(entries: list, top_n: int = 10) -> l
     return fields
 
 
-def proximity_teaser(entries: list, chaser_rank_threshold: int = 5, templates: list | None = None) -> str | None:
+def proximity_teaser(entries: list, chaser_rank_threshold: int = 5,
+                       templates: list | None = None, mm: dict = None):
     """
     Ελέγχει αν κάποιος μέσα στις πρώτες `chaser_rank_threshold` θέσεις είναι πολύ κοντά
-    στον επόμενο από πάνω του, και επιστρέφει ένα "teaser" μήνυμα. Αν δεν υπάρχει κάτι
-    αρκετά κοντινό, επιστρέφει None (δεν στέλνεις μήνυμα χωρίς λόγο).
+    στον επόμενο από πάνω του, και επιστρέφει ένα "teaser" μήνυμα.
+
+    Επιστρέφει πάντα (text, chaser_id):
+      text      -> το μήνυμα (ή None αν δεν υπάρχει αρκετά κοντινή μάχη)
+      chaser_id -> Discord user id του κυνηγού (μέσω mention_map mm) ή None
+
+    Με mm, το όνομα του κυνηγού γίνεται <@id> στο κείμενο - πέρασέ το ως
+    mentions=[chaser_id] στην αποστολή για να κάνει ping.
 
     Λογική: ψάχνει τη ΜΙΚΡΟΤΕΡΗ διαφορά ανάμεσα σε δύο διαδοχικές θέσεις μέσα στο top N,
     και αν είναι κάτω από ένα κατώφλι (π.χ. 0.5s), το αναδεικνύει.
@@ -64,20 +71,25 @@ def proximity_teaser(entries: list, chaser_rank_threshold: int = 5, templates: l
             best_pair = (leader, chaser, i + 1)  # i+1 = η θέση του leader (1-based)
 
     if best_gap is None:
-        return None
+        return None, None
 
     # Κατώφλι: μόνο αν η διαφορά είναι "δραματική" (προσάρμοσέ το όπως θες)
     THRESHOLD_SECONDS = 0.5
     if best_gap > THRESHOLD_SECONDS:
-        return None
+        return None, None
 
     leader, chaser, leader_rank = best_pair
+    chaser_name = chaser["pilot"]
+    chaser_id = (mm or {}).get(chaser_name.lower())
     if templates:
         from messages import pick
-        return pick(templates).format(
-            chaser=chaser["pilot"], leader=leader["pilot"],
+        text = pick(templates).format(
+            chaser=chaser_name, leader=leader["pilot"],
             gap=best_gap, pos=leader_rank, track="")
-    if leader_rank == 1:
-        return f"⚡ {chaser['pilot']} χρειάζεται μόνο {best_gap:.3f}s για να πάρει το #1 από τον/την {leader['pilot']}!"
+    elif leader_rank == 1:
+        text = f"⚡ {chaser_name} χρειάζεται μόνο {best_gap:.3f}s για να πάρει το #1 από τον/την {leader['pilot']}!"
     else:
-        return f"⚡ {chaser['pilot']} χρειάζεται μόνο {best_gap:.3f}s για να προσπεράσει τον/την {leader['pilot']} (θέση #{leader_rank})!"
+        text = f"⚡ {chaser_name} χρειάζεται μόνο {best_gap:.3f}s για να προσπεράσει τον/την {leader['pilot']} (θέση #{leader_rank})!"
+    if chaser_id:
+        text = text.replace(chaser_name, f"<@{chaser_id}>", 1)
+    return text, chaser_id

@@ -16,11 +16,12 @@ User-defined script, user **root**.
 cd /volume1/velocidrone-bot && python3 update_leaderboard.py --once --source auto >> bot.log 2>&1
 ```
 
-### 2. FPV-bot update — καθημερινά 04:00
+### 2. FPV-bot update — καθημερινά 04:00 (με αυτόματο selftest!)
 ```
 cd /volume1/velocidrone-bot
 git pull --rebase --autostash >> bot.log 2>&1
 python3 -m pip install -q -r requirements.txt >> bot.log 2>&1
+python3 selftest.py >> bot.log 2>&1 || python3 -c "from discord_notify import send_discord_admin_message; send_discord_admin_message('🚨 Selftest απέτυχε μετά το update! Έλεγξε bot.log')"
 ```
 
 ### 3. FPV-Export — κάθε 5 λεπτά (site_data -> repo για το site)

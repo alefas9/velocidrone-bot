@@ -46,6 +46,29 @@ def _enrich_hist(h: dict, tracks_state: dict = None) -> dict:
     return h
 
 
+def _season_chart(standings: dict) -> dict:
+    """{'weeks': [...], 'series': {πιλότος: [συσσωρευτικοί πόντοι ανά εβδομάδα]}}.
+
+    Για γράφημα προόδου σεζόν στο site. Οι πιλότοι που δεν πήραν πόντους
+    μια εβδομάδα κρατάνε το σύνολό τους (carry-forward).
+    """
+    history = standings.get("history", [])
+    weeks, raw = [], []
+    for h in history:
+        weeks.append(h.get("track", "?"))
+        pts = {r.get("pilot"): r.get("points", 0) for r in h.get("results", [])}
+        raw.append(pts)
+    pilots = sorted({p for pts in raw for p in pts})
+    series = {}
+    for p in pilots:
+        total, line = 0, []
+        for pts in raw:
+            total += pts.get(p, 0)
+            line.append(total)
+        series[p] = line
+    return {"weeks": weeks, "series": series}
+
+
 def _quad_of(key: str) -> str:
     """Όνομα quad από το κλειδί εγγραφής 'πιλότος|μοντέλο'.
 
@@ -183,6 +206,10 @@ def export(path: str = "site_data.json") -> dict:
         "season_standings": season,
         "history": [_enrich_hist(h, state.get("tracks", {}))
                     for h in standings.get("history", [])[-20:]],
+
+        # δεδομένα για γράφημα βαθμών σεζόν (render στο site)
+        # weeks: labels εβδομάδων | series: {πιλότος: [συσσωρευτικοί πόντοι]}
+        "season_chart": _season_chart(standings),
         "duels": active_duels,                            # ενεργά duels
     }
     with open(path, "w", encoding="utf-8") as f:

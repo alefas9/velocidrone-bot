@@ -134,6 +134,67 @@ def main():
               "whitelist.py", "points.py", "export_site_data.py", "duel_suggestions.py"]:
         check(f"Αρχείο {f}", os.path.exists(f))
 
+    # backup freshness
+    import datetime as _dt
+    try:
+        backups = sorted(f for f in os.listdir("backups") if f.endswith(".tar.gz"))
+        if backups:
+            mtime = os.path.getmtime(os.path.join("backups", backups[-1]))
+            age_h = (_dt.datetime.now() - _dt.datetime.fromtimestamp(mtime)).total_seconds() / 3600
+            check("Φρεσκάδα backup (<26h)", age_h < 26,
+                  f"τελευταίο: {backups[-1]} ({age_h:.1f}h πριν)")
+        else:
+            check("Φρεσκάδα backup", False, "κανένα backup ακόμα (τρέξε backup.py)")
+    except FileNotFoundError:
+        check("Φρεσκάδα backup", False, "δεν υπάρχει ο φάκελος backups/")
+
+    # Tracebacks στο bot.log τις τελευταίες 24h
+    try:
+        import re as _re
+        with open("bot.log", encoding="utf-8", errors="replace") as f:
+            log = f.read()
+        tb_positions = [m.start() for m in _re.finditer(r"Traceback", log)]
+        recent_tb = 0
+        if tb_positions:
+            cut = log.rfind("\n[", 0, tb_positions[-1])   # τελευταίο timestamp πριν το τελευταίο TB
+            m = _re.search(r"\[(\d{2})/(\d{2})/(\d{2}):(\d{2}):(\d{2})\]", log[cut:tb_positions[-1]] + log[tb_positions[-1]:tb_positions[-1]+200])
+            if m:
+                mon, day, hh, mm_, ss = map(int, m.groups())
+                now = _dt.datetime.now()
+                ts = now.replace(month=mon, day=day, hour=hh, minute=mm_, second=ss, microsecond=0)
+                if ts > now:   # edge γύρω από την Πρωτοχρονιά
+                    ts = ts.replace(year=ts.year - 1)
+                recent_tb = 1 if (now - ts).total_seconds() < 24 * 3600 else 0
+        check("Χωρίς Traceback στο log (24h)", recent_tb == 0,
+              f"{len(tb_positions)} traceback(s) συνολικά" + (", πρόσφατο!" if recent_tb else ""))
+    except FileNotFoundError:
+        check("Χωρίς Traceback στο log", True, "δεν υπάρχει bot.log")
+
+    # Δραστηριότητα (INFO μόνο - δεν κάνει fail)
+    try:
+        import json as _json
+        state = _json.load(open("state.json"))
+        weekly = _json.load(open("weekly_track.json"))
+        active = weekly.get("track") and not weekly.get("ended")
+        if active and state.get("records_log"):
+            last = state["records_log"][-1].get("date", "")
+            try:
+                last_dt = _dt.datetime.fromisoformat(last)
+                age_h = (_dt.datetime.now() - last_dt).total_seconds() / 3600
+                detail = f"{age_h:.1f}h από τελευταίο ρεκόρ"
+                ok = True
+                if age_h > 24:
+                    detail += " — ο κόσμος κοιμάται; 😴"
+                check("Δραστηριότητα πιλότων (info)", True, detail)
+            except ValueError:
+                check("Δραστηριότητα πιλότων (info)", True, "μη αναλύσιμη ημερομηνία")
+        elif active:
+            check("Δραστηριότητα πιλότων (info)", True, "κανένα ρεκόρ ακόμα στην εβδομάδα")
+        else:
+            check("Δραστηριότητα πιλότων (info)", True, "δεν τρέχει εβδομάδα")
+    except FileNotFoundError:
+        check("Δραστηριότητα πιλότων (info)", True, "state/weekly λείπουν")
+
     print("=" * 50)
     failed = RESULTS.count(False)
     if failed == 0:

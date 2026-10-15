@@ -61,7 +61,8 @@ def main() -> int:
         "Position,Name,Time\n1,Nikos,59.5\n2,Giannis,65.0\n")
     r = subprocess.run([sys.executable, "update_leaderboard.py", "--once", "--source", "csv"],
                        cwd=td, capture_output=True, text=True)
-    welcomes = [l for l in r.stdout.splitlines() if "🆕" in l]
+    # σημείωση: κάποια templates έχουν 🆕 στο κείμενο - ψάχνουμε τη γραμμή log
+    welcomes = [l for l in r.stdout.splitlines() if "Καλωσόρισμα νέου πιλότου" in l]
     check("μόνο ο νεοφερμένος καλωσορίζεται",
           len(welcomes) == 1 and "Giannis" in welcomes[0],
           f"{len(welcomes)} welcome(s)")
@@ -72,7 +73,7 @@ def main() -> int:
     print("C. Όχι επανάληψη καλωσορίσματος...")
     r = subprocess.run([sys.executable, "update_leaderboard.py", "--once", "--source", "csv"],
                        cwd=td, capture_output=True, text=True)
-    check("2η σάρωση σιωπηλή", "🆕" not in r.stdout)
+    check("2η σάρωση σιωπηλή", "Καλωσόρισμα νέου πιλότου" not in r.stdout)
 
     print("D. Πιλότος της Εβδομάδας...")
     open(os.path.join(td, "state.json"), "w").write(json.dumps({

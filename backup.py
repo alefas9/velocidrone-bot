@@ -32,6 +32,30 @@ FILES = [
 ]
 BACKUP_DIR = "backups"
 KEEP_DAYS = 7
+LOG_FILE = "bot.log"
+LOG_MAX_MB = 5          # rotation όταν το log ξεπεράσει αυτό το μέγεθος
+LOG_KEEP = 4            # πόσα παλιά (gz) logs κρατάμε
+
+
+def rotate_log():
+    """Gzip + truncate του bot.log αν έχει ξεπεράσει LOG_MAX_MB."""
+    if not os.path.exists(LOG_FILE):
+        return None
+    if os.path.getsize(LOG_FILE) < LOG_MAX_MB * 1024 * 1024:
+        return None
+    import gzip
+    import shutil as _sh
+    stamp = datetime.datetime.now().strftime("%Y-%m-%d")
+    dest = f"bot-{stamp}.log.gz"
+    with open(LOG_FILE, "rb") as f_in, gzip.open(dest, "wb") as f_out:
+        _sh.copyfileobj(f_in, f_out)
+    open(LOG_FILE, "w").close()   # truncate
+    # retention παλιών logs
+    olds = sorted(f for f in os.listdir(".")
+                  if f.startswith("bot-") and f.endswith(".log.gz"))
+    for old in olds[:-LOG_KEEP]:
+        os.remove(old)
+    return dest
 
 
 def run_backup() -> tuple:
@@ -66,6 +90,9 @@ def main() -> None:
         msg = f"💾 Backup OK: {path} ({size_kb}KB, {KEEP_DAYS} ημέρες retention)"
         if missing:
             msg += f" | έλειπαν: {', '.join(missing)}"
+        rotated = rotate_log()
+        if rotated:
+            msg += f" | log rotated: {rotated}"
         print(msg)
     except Exception as e:
         print(f"❌ Backup απέτυχε: {e}")

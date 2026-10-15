@@ -247,23 +247,36 @@ def scan_once(tracks_dir: str = TRACKS_DIR, source: str = "auto") -> None:
         # Τα extras είναι fire-and-forget: σφάλμα εδώ δεν πρέπει να σκοτώσει τη σάρωση.
         try:
             from messages import TEASER, pick
+            from whitelist import mention_map, to_mention
+            mm = mention_map()
             for cls, group in groups.items():
                 if improved.get(cls or None) or improved.get(cls):
-                    teaser = proximity_teaser(group, templates=TEASER)
+                    # mm -> tag στον κυνηγό: "σε κυνηγάει ο @Exo_FPV!"
+                    teaser, chaser_id = proximity_teaser(group, templates=TEASER, mm=mm)
                     if teaser:
-                        send_discord_message(teaser)
+                        send_discord_message(teaser,
+                                             mentions=[chaser_id] if chaser_id else None)
 
             # Αυτόματες προτάσεις duels (ντέρμπι που κρατούν μέρες) - με @mentions
             from duel_suggestions import update_suggestions
             from messages import DUEL_SUGGEST
-            from whitelist import mention_map, to_mention
-            mm = mention_map()
             for s in update_suggestions(track, groups):
                 data = dict(s)
                 data["leader"] = to_mention(s["leader"], mm)
                 data["chaser"] = to_mention(s["chaser"], mm)
                 ids = [mm[k] for k in (s["leader"].lower(), s["chaser"].lower()) if k in mm]
-                send_discord_message(pick(DUEL_SUGGEST).format(**data), mentions=ids)
+                body = pick(DUEL_SUGGEST).format(**data)
+                # 50% -> versus GIF (embed image), 50% -> σκέτο μήνυμα
+                img = None
+                import random as _rnd
+                if _rnd.random() < 0.5:
+                    from gif_fetcher import fetch_gif, giphy_page_to_media, QUERIES_DUEL
+                    page = fetch_gif(random.choice(QUERIES_DUEL))
+                    img = giphy_page_to_media(page) if page else None
+                if img:
+                    send_discord_embed(description=body, image=img, mentions=ids)
+                else:
+                    send_discord_message(body, mentions=ids)
 
             # Καλωσόρισμα ολοκαίνουριου πιλότου (πρώτη εγγραφή ΠΟΤΕ στο bot).
             # Οι newcomers συλλέχθηκαν στο loop βελτιώσεων (old is None και
