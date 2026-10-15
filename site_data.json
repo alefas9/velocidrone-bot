@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-10-16T01:25:02.564596",
+  "generated_at": "2026-10-16T01:30:02.542661",
   "season": 2026,
   "current_track": "SimRushWeek2",
   "current_leaderboard": {
@@ -205,5 +205,42 @@
       }
     }
   ],
+  "season_chart": {
+    "weeks": [
+      "SimRush Week1"
+    ],
+    "series": {
+      "Agorastos": [
+        2
+      ],
+      "DedalosFPV": [
+        10
+      ],
+      "Exo_FPV": [
+        25
+      ],
+      "Liapos": [
+        6
+      ],
+      "TettixPro": [
+        12
+      ],
+      "ZOUP": [
+        15
+      ],
+      "anthunder": [
+        18
+      ],
+      "dimbazus": [
+        4
+      ],
+      "fpvchucky": [
+        1
+      ],
+      "tomahok": [
+        8
+      ]
+    }
+  },
   "duels": []
 }
