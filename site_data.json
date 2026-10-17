@@ -1,61 +1,8 @@
 {
-  "generated_at": "2026-10-17T20:55:02.762629",
+  "generated_at": "2026-10-17T21:00:02.790202",
   "season": 2026,
-  "current_track": "SimRushWeek2",
-  "current_leaderboard": {
-    "5inch": [
-      {
-        "pilot": "ZOUP",
-        "time": 78.055,
-        "quad": "Bahamut"
-      },
-      {
-        "pilot": "Exo_FPV",
-        "time": 78.546,
-        "quad": "Bahamut"
-      },
-      {
-        "pilot": "TettixPro",
-        "time": 85.841,
-        "quad": "Five33 Switchback"
-      },
-      {
-        "pilot": "DedalosFPV",
-        "time": 102.158,
-        "quad": "Bahamut"
-      },
-      {
-        "pilot": "tomahok",
-        "time": 128.807,
-        "quad": "Five33 Switchback"
-      },
-      {
-        "pilot": "Cbeikos",
-        "time": 132.451,
-        "quad": "Five33 Switchback"
-      },
-      {
-        "pilot": "Agorastos",
-        "time": 134.332,
-        "quad": "BetaFPV 75x"
-      },
-      {
-        "pilot": "Liapos",
-        "time": 140.24,
-        "quad": "Bahamut"
-      },
-      {
-        "pilot": "dimbazus",
-        "time": 141.878,
-        "quad": "Bahamut"
-      },
-      {
-        "pilot": "fpvchucky",
-        "time": 377.356,
-        "quad": "Bahamut"
-      }
-    ]
-  },
+  "current_track": "SimRushWeek3",
+  "current_leaderboard": {},
   "season_standings": {
     "5inch": [
       {
