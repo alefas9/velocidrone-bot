@@ -9,6 +9,18 @@ User-defined script, user **root**.
 
 ---
 
+## 🗓️ Το Σαββατιάτικο ριτουάλ (concept)
+
+| Ώρα | Τι γίνεται | Ποιος |
+|---|---|---|
+| Σάββατο **18:06** | Κλείνει η εβδομάδα: πόντοι + embeds στο Discord | 🤖 Αυτόματο (FPV-StopWeek) |
+| Σάββατο 18:06–21:00 | Run στο FPV-Week με τη νέα πίστα (όνομα + track_id από Fiddler) | ✋ Εσύ |
+| Σάββατο ~21:00 | Νέα εβδομάδα σε πλήρη λειτουργία | ✅ |
+
+Προετοιμασία μέχρι Σάββατο απόγευμα: νέα πίστα ανεβασμένη + track_id.
+
+---
+
 ## Αυτόματα tasks
 
 ### 1. FPV-bot Scan — κάθε 5 λεπτά
@@ -48,32 +60,34 @@ fi
 cd /volume1/velocidrone-bot && python3 post_recap.py >> bot.log 2>&1
 ```
 
-### 6. FPV-Backup — καθημερινά 03:00
+### 6. FPV-Backup — καθημερινά 03:00 (backup + log rotation)
 ```
 cd /volume1/velocidrone-bot && python3 backup.py >> bot.log 2>&1
 ```
+
+### 7. FPV-StopWeek — **Σάββατο 18:06 ΑΥΤΟΜΑΤΑ** ⏰
+```
+cd /volume1/velocidrone-bot && python3 admin.py week-stop >> bot.log 2>&1
+```
+Schedule: Weekly, **μόνο Saturday**, 18:06. Κλείνει την εβδομάδα με πόντους.
+(Κρατάει και το κουμπί Run για πρόωρο κλείσιμο αν χρειαστεί.)
 
 ---
 
 ## Manual tasks (τρέχουν μόνο με Run — πριν το Run αλλάζεις ονόματα/ids)
 
-### 7. FPV-Week — αλλαγή εβδομάδας
+### 8. FPV-Week — έναρξη νέας εβδομάδας (Σάββατο βράδυ, 1-3h μετά το StopWeek)
 ```
 cd /volume1/velocidrone-bot && python3 admin.py week "ΟΝΟΜΑ_ΠΙΣΤΑΣ" --track-id XXXXX >> bot.log 2>&1
 ```
-(κλείνει αυτόματα την προηγούμενη εβδομάδα με πόντους)
-
-### 8. FPV-StopWeek — κλείσιμο εβδομάδας χωρίς νέα πίστα
-```
-cd /volume1/velocidrone-bot && python3 admin.py week-stop >> bot.log 2>&1
-```
+(αν το StopWeek έχει ήδη κλείσει, δεν ξαναδοκιμάζει απονομή - idempotency)
 
 ### 9. FPV-WeekFix — επανα-ανέβασμα ίδιας πίστας (διόρθωση layout)
 ```
 cd /volume1/velocidrone-bot && python3 admin.py week-fix "ΟΝΟΜΑ_ΠΙΣΤΑΣ" --track-id XXXXX >> bot.log 2>&1
 ```
 
-### 10. FPV-Duels — δημιουργία duel
+### 10. FPV-Duels — δημιουργία duel (manual)
 ```
 cd /volume1/velocidrone-bot && python3 admin.py duel "ΠΙΛΟΤΟΣ_Α" "ΠΙΛΟΤΟΣ_Β" "ΠΙΣΤΑ" --days 3 >> bot.log 2>&1
 ```
@@ -93,9 +107,10 @@ cd /volume1/velocidrone-bot && python3 admin.py duel-cancel "ΠΙΛΟΤΟΣ_Α" 
 ```bash
 cd /volume1/velocidrone-bot
 python3 health_check.py              # έλεγχος υγείας
-python3 admin.py week-stop           # κλείσιμο εβδομάδας
 python3 admin.py standings           # βαθμολογία σεζόν -> Discord
+python3 admin.py quad scan           # model_ids στο leaderboard (για quads)
 python3 admin.py test-gif            # τεστ GIF (admin κανάλι)
+python3 selftest.py                  # πλήρες τεστ συστήματος
 python3 backup.py                    # άμεσο backup
 tar -xzf backups/ΗΜΕΡΟΜΗΝΙΑ.tar.gz   # επαναφορά από backup
 ```
