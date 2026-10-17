@@ -80,14 +80,19 @@ def _award_and_announce(track: str, state, force: bool = False) -> list:
     potw = points.pilot_of_the_week(state, track, prev_track)
     if potw:
         pilot, imp, tp, tn = potw
+        from whitelist import mention_map, to_mention
+        mm = mention_map()
+        potw_label = to_mention(pilot, mm)      # <@id> αν υπάρχει στη whitelist
+        potw_id = mm.get(pilot.lower())
         send_discord_embed(
             title="🌟 Πιλότος της εβδομάδας",
             description=(
-                f"**{pilot}** — μεγαλύτερη βελτίωση σεζόν: "
+                f"{potw_label} — μεγαλύτερη βελτίωση σεζόν: "
                 f"**{imp:+.1f}%** ({tp:.3f}s → {tn:.3f}s)\n"
                 f"Σε σχέση με την προηγούμενη εβδομάδα ({prev_track})"
             ),
             color=0xF1C40F,
+            mentions=[potw_id] if potw_id else None,
         )
     return results
 
