@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-10-18T14:25:02.813412",
+  "generated_at": "2026-10-18T14:30:02.856221",
   "season": 2026,
   "current_track": "SimRushWeek3",
   "current_leaderboard": {
@@ -10,14 +10,14 @@
         "quad": "Five33 Switchback"
       },
       {
+        "pilot": "Cbeikos",
+        "time": 56.123,
+        "quad": "Five33 Switchback"
+      },
+      {
         "pilot": "DedalosFPV",
         "time": 57.396,
         "quad": "Bahamut"
-      },
-      {
-        "pilot": "Cbeikos",
-        "time": 58.989,
-        "quad": "Five33 Switchback"
       },
       {
         "pilot": "dimbazus",
