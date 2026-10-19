@@ -1,18 +1,18 @@
 {
-  "generated_at": "2026-10-20T01:20:02.407965",
+  "generated_at": "2026-10-20T01:25:02.124518",
   "season": 2026,
   "current_track": "SimRushWeek3",
   "current_leaderboard": {
     "5inch": [
       {
+        "pilot": "Exo_FPV",
+        "time": 41.834,
+        "quad": "Bahamut"
+      },
+      {
         "pilot": "TettixPro",
         "time": 42.241,
         "quad": "Carbix Zero"
-      },
-      {
-        "pilot": "Exo_FPV",
-        "time": 42.391,
-        "quad": "Bahamut"
       },
       {
         "pilot": "DedalosFPV",
