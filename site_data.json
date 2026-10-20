@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-10-20T19:20:03.414482",
+  "generated_at": "2026-10-20T19:25:02.519017",
   "season": 2026,
   "current_track": "SimRushWeek3",
   "current_leaderboard": {
@@ -13,6 +13,11 @@
         "pilot": "TettixPro",
         "time": 42.241,
         "quad": "Carbix Zero"
+      },
+      {
+        "pilot": "ZOUP",
+        "time": 45.607,
+        "quad": "Bahamut"
       },
       {
         "pilot": "DedalosFPV",
