@@ -292,7 +292,7 @@ def scan_once(tracks_dir: str = TRACKS_DIR, source: str = "auto") -> None:
                 import random as _rnd
                 if _rnd.random() < 0.5:
                     from gif_fetcher import fetch_gif, giphy_page_to_media, QUERIES_DUEL
-                    page = fetch_gif(random.choice(QUERIES_DUEL))
+                    page = fetch_gif(_rnd.choice(QUERIES_DUEL))
                     img = giphy_page_to_media(page) if page else None
                 if img:
                     send_discord_embed(description=body, image=img, mentions=ids)
