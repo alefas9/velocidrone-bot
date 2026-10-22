@@ -40,57 +40,51 @@ def format_leaderboard_discord_embed_fields(entries: list, top_n: int = 10) -> l
     return fields
 
 
-def proximity_teaser(entries: list, chaser_rank_threshold: int = 5,
-                       templates: list | None = None, mm: dict = None):
-    """
-    Ελέγχει αν κάποιος μέσα στις πρώτες `chaser_rank_threshold` θέσεις είναι πολύ κοντά
-    στον επόμενο από πάνω του, και επιστρέφει ένα "teaser" μήνυμα.
-
-    Επιστρέφει πάντα (text, chaser_id, key):
-      text      -> το μήνυμα (ή None αν δεν υπάρχει αρκετά κοντινή μάχη)
-      chaser_id -> Discord user id του κυνηγού (μέσω mention_map mm) ή None
-      key       -> "leader|chaser" (για cooldown/αποφυγή spam στα tags)
-
-    Με mm, το όνομα του κυνηγού γίνεται <@id> στο κείμενο - πέρασέ το ως
-    mentions=[chaser_id] στην αποστολή για να κάνει ping.
-
-    Λογική: ψάχνει τη ΜΙΚΡΟΤΕΡΗ διαφορά ανάμεσα σε δύο διαδοχικές θέσεις μέσα στο top N,
-    και αν είναι κάτω από ένα κατώφλι (π.χ. 0.5s), το αναδεικνύει.
-    """
-    if len(entries) < 2:
-        return None
-
-    best_gap = None
-    best_pair = None
-
-    for i in range(min(chaser_rank_threshold, len(entries) - 1)):
-        leader = entries[i]
-        chaser = entries[i + 1]
-        gap = chaser["time"] - leader["time"]
-        if best_gap is None or gap < best_gap:
-            best_gap = gap
-            best_pair = (leader, chaser, i + 1)  # i+1 = η θέση του leader (1-based)
-
-    if best_gap is None:
-        return None, None, None
-
-    # Κατώφλι: μόνο αν η διαφορά είναι "δραματική" (προσάρμοσέ το όπως θες)
-    THRESHOLD_SECONDS = 0.5
-    if best_gap > THRESHOLD_SECONDS:
-        return None, None, None
-
-    leader, chaser, leader_rank = best_pair
+def _format_teaser(leader, chaser, gap, leader_rank, templates, mm):
+    """Ένα teaser μήνυμα για ζευγάρι leader/chaser (με tag αν υπάρχει id)."""
     chaser_name = chaser["pilot"]
     chaser_id = (mm or {}).get(chaser_name.lower())
     if templates:
         from messages import pick
         text = pick(templates).format(
             chaser=chaser_name, leader=leader["pilot"],
-            gap=best_gap, pos=leader_rank, track="")
+            gap=gap, pos=leader_rank, track="")
     elif leader_rank == 1:
-        text = f"⚡ {chaser_name} χρειάζεται μόνο {best_gap:.3f}s για να πάρει το #1 από τον/την {leader['pilot']}!"
+        text = f"⚡ {chaser_name} χρειάζεται μόνο {gap:.3f}s για να πάρει το #1 από τον {leader['pilot']}!"
     else:
-        text = f"⚡ {chaser_name} χρειάζεται μόνο {best_gap:.3f}s για να προσπεράσει τον/την {leader['pilot']} (θέση #{leader_rank})!"
+        text = f"⚡ {chaser_name} χρειάζεται μόνο {gap:.3f}s για να προσπεράσει τον {leader['pilot']} (θέση #{leader_rank})!"
     if chaser_id:
         text = text.replace(chaser_name, f"<@{chaser_id}>", 1)
     return text, chaser_id, f"{leader['pilot']}|{chaser_name}"
+
+
+def proximity_teasers(entries: list, chaser_rank_threshold: int = 5,
+                      templates: list | None = None, mm: dict = None,
+                      max_teasers: int = 2) -> list:
+    """ΟΛΕΣ οι κοντινές μάχες στο top N (όχι μόνο η κορυφαία).
+
+    Επιστρέφει λίστα από (text, chaser_id, key), ταξινομημένη κατά gap
+    (οι πιο σφιχτές μάχες πρώτες), το πολύ `max_teasers` αποτελέσματα.
+    """
+    if not entries or len(entries) < 2:
+        return []
+    top = entries[:chaser_rank_threshold]
+    THRESHOLD_SECONDS = 0.5   # μόνο "δραματικές" αποστάσεις
+    battles = []
+    for i in range(len(top) - 1):
+        gap = top[i + 1]["time"] - top[i]["time"]
+        if gap <= THRESHOLD_SECONDS:
+            battles.append((gap, top[i], top[i + 1], i + 1))
+    battles.sort(key=lambda b: b[0])
+    return [_format_teaser(b[1], b[2], b[0], b[3], templates, mm)
+            for b in battles[:max_teasers]]
+
+
+def proximity_teaser(entries: list, chaser_rank_threshold: int = 5,
+                       templates: list | None = None, mm: dict = None):
+    """
+    Πίσω συμβατότητα: μόνο η «καλύτερη» (πιο σφιχτή) μάχη.
+    Επιστρέφει πάντα (text, chaser_id, key).
+    """
+    res = proximity_teasers(entries, chaser_rank_threshold, templates, mm, max_teasers=1)
+    return res[0] if res else (None, None, None)

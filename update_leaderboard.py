@@ -29,7 +29,8 @@ import time
 from config import TRACKS_DIR, TOP_N
 import db
 from discord_notify import send_discord_message, send_discord_embed
-from leaderboard_format import format_leaderboard_discord_embed_fields, proximity_teaser
+from leaderboard_format import (format_leaderboard_discord_embed_fields,
+                                proximity_teaser, proximity_teasers)
 from duels import update_duel_times, check_expired_duels
 from track_categories import get_category, themed_day_label
 from velocidrone_source import load_all_tracks
@@ -270,22 +271,23 @@ def scan_once(tracks_dir: str = TRACKS_DIR, source: str = "auto") -> None:
             for cls, group in groups.items():
                 if improved.get(cls or None) or improved.get(cls):
                     # mm -> tag στον κυνηγό: "σε κυνηγάει ο @Exo_FPV!"
-                    teaser, chaser_id, tkey = proximity_teaser(group, templates=TEASER, mm=mm)
-                    if not teaser:
-                        continue
-                    age = None
-                    last = teaser_log.get(tkey)
-                    if last:
-                        try:
-                            age = (_dt.now() - _dt.fromisoformat(last)).total_seconds()
-                        except ValueError:
-                            age = None
-                    if age is not None and age < TEASER_COOLDOWN_H * 3600:
-                        print(f"  ⏩ teaser cooldown ({tkey}, {age/3600:.1f}h πριν)")
-                        continue
-                    send_discord_message(teaser,
-                                         mentions=[chaser_id] if chaser_id else None)
-                    teaser_log[tkey] = _dt.now().isoformat()
+                    # ΟΛΕΣ οι σφιχτές μάχες (όχι μόνο η κορυφαία), με cooldown ανά ζευγάρι
+                    for teaser, chaser_id, tkey in proximity_teasers(group, templates=TEASER, mm=mm):
+                        if not teaser:
+                            continue
+                        age = None
+                        last = teaser_log.get(tkey)
+                        if last:
+                            try:
+                                age = (_dt.now() - _dt.fromisoformat(last)).total_seconds()
+                            except ValueError:
+                                age = None
+                        if age is not None and age < TEASER_COOLDOWN_H * 3600:
+                            print(f"  ⏩ teaser cooldown ({tkey}, {age/3600:.1f}h πριν)")
+                            continue
+                        send_discord_message(teaser,
+                                             mentions=[chaser_id] if chaser_id else None)
+                        teaser_log[tkey] = _dt.now().isoformat()
                     # κράτα μόνο τα 50 πιο πρόσφατα
                     if len(teaser_log) > 50:
                         for old_k in sorted(teaser_log, key=lambda k: teaser_log[k])[:-50]:
