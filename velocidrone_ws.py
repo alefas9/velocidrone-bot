@@ -110,7 +110,7 @@ class RaceTracker:
             description=desc,
             fields=fields,
         )
-        teaser = proximity_teaser([{"pilot": r["pilot"], "time": r["time"]} for r in res])
+        teaser, _, _ = proximity_teaser([{"pilot": r["pilot"], "time": r["time"]} for r in res])
         if teaser:
             send_discord_message(teaser)
 

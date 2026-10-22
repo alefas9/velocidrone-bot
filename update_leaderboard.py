@@ -248,14 +248,33 @@ def scan_once(tracks_dir: str = TRACKS_DIR, source: str = "auto") -> None:
         try:
             from messages import TEASER, pick
             from whitelist import mention_map, to_mention
+            from datetime import datetime as _dt
             mm = mention_map()
+            TEASER_COOLDOWN_H = 6   # το ίδιο ζευγάρι δεν ξανα-τάγκαρεται πριν 6 ώρες
+            teaser_log = state.setdefault("teaser_log", {})
             for cls, group in groups.items():
                 if improved.get(cls or None) or improved.get(cls):
                     # mm -> tag στον κυνηγό: "σε κυνηγάει ο @Exo_FPV!"
-                    teaser, chaser_id = proximity_teaser(group, templates=TEASER, mm=mm)
-                    if teaser:
-                        send_discord_message(teaser,
-                                             mentions=[chaser_id] if chaser_id else None)
+                    teaser, chaser_id, tkey = proximity_teaser(group, templates=TEASER, mm=mm)
+                    if not teaser:
+                        continue
+                    age = None
+                    last = teaser_log.get(tkey)
+                    if last:
+                        try:
+                            age = (_dt.now() - _dt.fromisoformat(last)).total_seconds()
+                        except ValueError:
+                            age = None
+                    if age is not None and age < TEASER_COOLDOWN_H * 3600:
+                        print(f"  ⏩ teaser cooldown ({tkey}, {age/3600:.1f}h πριν)")
+                        continue
+                    send_discord_message(teaser,
+                                         mentions=[chaser_id] if chaser_id else None)
+                    teaser_log[tkey] = _dt.now().isoformat()
+                    # κράτα μόνο τα 50 πιο πρόσφατα
+                    if len(teaser_log) > 50:
+                        for old_k in sorted(teaser_log, key=lambda k: teaser_log[k])[:-50]:
+                            teaser_log.pop(old_k, None)
 
             # Αυτόματες προτάσεις duels (ντέρμπι που κρατούν μέρες) - με @mentions
             from duel_suggestions import update_suggestions
@@ -266,6 +285,8 @@ def scan_once(tracks_dir: str = TRACKS_DIR, source: str = "auto") -> None:
                 data["chaser"] = to_mention(s["chaser"], mm)
                 ids = [mm[k] for k in (s["leader"].lower(), s["chaser"].lower()) if k in mm]
                 body = pick(DUEL_SUGGEST).format(**data)
+                print(f"  🥊 Πρόταση duel: {s['leader']} vs {s['chaser']} "
+                      f"(gap {s['gap']:.3f}s, {s['days']} μέρες)")
                 # 50% -> versus GIF (embed image), 50% -> σκέτο μήνυμα
                 img = None
                 import random as _rnd

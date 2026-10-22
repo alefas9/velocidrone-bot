@@ -41,7 +41,7 @@ def on_new_record_detected(track_name: str, pilot_name: str, new_time: float, fu
     # + αντίστοιχο bot.send_message(...) για Telegram, με format_leaderboard(full_leaderboard)
 
     # 2) Proximity teaser (feature #2) - στέλνεται μόνο αν υπάρχει κάτι "δραματικό"
-    teaser = proximity_teaser(full_leaderboard)
+    teaser, _, _ = proximity_teaser(full_leaderboard)
     if teaser:
         send_discord_message(teaser)
         # + bot.send_message(...) για Telegram
