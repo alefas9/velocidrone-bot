@@ -121,6 +121,24 @@ def _maybe_award_previous(args) -> None:
         print(f"Απονεμήθηκαν πόντοι για «{prev_track}» ({len(results)} κλάσεις)")
 
 
+def cmd_duel_preview(args) -> None:
+    """Προβολή των κοντρών που παρακολουθεί το bot (χωρίς Discord)."""
+    import json, os
+    if not os.path.exists("duel_suggestions.json"):
+        print("Δεν παρακολουθείται κόντρα αυτή τη στιγμή.")
+        return
+    data = json.load(open("duel_suggestions.json", encoding="utf-8"))
+    if not data:
+        print("Δεν παρακολουθείται κόντρα αυτή τη στιγμή.")
+        return
+    for k, v in sorted(data.items()):
+        track, a, b = k.split("|", 2)
+        gap = v.get("gap")
+        gap_txt = f"{gap:.3f}s" if isinstance(gap, (int, float)) else "—"
+        status = "ΠΡΟΤΑΘΗΚΕ ✅" if v.get("suggested") else "παρακολούθηση ⏳"
+        print(f"{a} vs {b} @ «{track}» — απόσταση {gap_txt} — {status}")
+
+
 def cmd_duel_list(args) -> None:
     import duels as dm
     duels = [d for d in dm._load_duels() if not d.get("resolved")]
@@ -523,6 +541,9 @@ def main() -> None:
 
     dl = sub.add_parser("duel-list", help="προβολή ενεργών duels")
     dl.set_defaults(func=cmd_duel_list)
+
+    dpr = sub.add_parser("duel-preview", help="κόντρες υπό παρακολούθηση (χωρίς Discord)")
+    dpr.set_defaults(func=cmd_duel_preview)
 
     dc = sub.add_parser("duel-cancel", help="ακύρωση duel (διαγράφει ΟΛΑ τα duels του ζευγαριού)")
     dc.add_argument("pilot_a")

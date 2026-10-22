@@ -55,11 +55,12 @@ def update_suggestions(track: str, groups: dict, now=None) -> list:
             key = f"{track}|{leader['pilot']}|{chaser['pilot']}"
             current_pairs.add(key)
             entry = data.get(key)
-            if entry and entry.get("suggested"):
-                continue  # ήδη προτάθηκε παλιότερα
             if entry is None:
                 entry = {"first_seen": now.isoformat(), "suggested": False}
                 data[key] = entry
+            entry["gap"] = round(gap, 3)   # τρέχουσα απόσταση (για προβολή admin)
+            if entry.get("suggested"):
+                continue  # ήδη προτάθηκε παλιότερα
             first_seen = datetime.fromisoformat(entry["first_seen"])
             if now - first_seen >= timedelta(days=MIN_DAYS) and not entry["suggested"]:
                 entry["suggested"] = True
