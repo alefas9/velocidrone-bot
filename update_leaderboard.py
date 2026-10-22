@@ -90,7 +90,7 @@ def _class_label(cls: str) -> str:
 
 
 def announce_record(track, pilot, new_time, is_new_top, entries, cls=None,
-                    model=None, stolen_from=None):
+                    model=None, stolen_from=None, recent_gifs=None):
     """Real-time ανακοίνωση νέου ρεκόρ με ποικιλία μηνυμάτων (engagement!).
 
     GIF: (1) αν έχεις γεμίσει τις curated λίστες GIF_... στο messages.py,
@@ -99,6 +99,9 @@ def announce_record(track, pilot, new_time, is_new_top, entries, cls=None,
 
     stolen_from: όνομα προηγούμενου leader όταν ο νέος #1 τον ΠΕΡΝΑΕΙ
     ("κλοπή κορυφής") -> δραματικό μήνυμα + crown GIF.
+
+    recent_gifs: κοινόχρηστη λίστα (από state) με τα τελευταία GIF -
+    το bot αποφεύγει να στείλει κάτι που έπαιξε πρόσφατα (φρεσκάδα).
     """
     import random
     import requests as _rq
@@ -133,24 +136,35 @@ def announce_record(track, pilot, new_time, is_new_top, entries, cls=None,
     else:
         pool = GIF_NEW_TOP if is_new_top else GIF_PERSONAL
         queries = QUERIES_NEW_TOP if is_new_top else QUERIES_PERSONAL
-    if pool:
-        if random.random() < 0.5:
-            from gif_fetcher import giphy_page_to_media
+    from gif_fetcher import giphy_page_to_media
+    recent = recent_gifs if recent_gifs is not None else []
+    # Μέχρι 3 προσπάθειες για ΦΡΕΣΚΟ GIF - αποφεύγουμε τα τελευταία 12
+    for _attempt in range(3):
+        cand = None
+        if pool and random.random() < 0.5:
             page = pick(pool)
             # το Discord ΔΕΝ δείχνει HTML σελίδα ως embed image -
             # μετατροπή σε direct media URL (παίζει inline στο embed)
-            gif = giphy_page_to_media(page) or page
-    else:
-        info = fetch_gif_full(random.choice(queries))
-        if info:
-            try:
-                rr = _rq.get(info["media"], timeout=15)
-                if rr.ok and 1000 < len(rr.content) < 8_000_000:
-                    gif_bytes = rr.content
-                else:
-                    gif = info.get("page")
-            except Exception:
-                gif = info.get("page")
+            cand = giphy_page_to_media(page) or page
+        else:
+            info = fetch_gif_full(random.choice(queries))
+            if info:
+                cand = (giphy_page_to_media(info.get("page", ""))
+                        or info.get("media") or info.get("page"))
+        if not cand:
+            break
+        if cand not in recent:
+            gif = cand
+            break
+    if gif:
+        recent.append(gif)
+        del recent[:-12]   # κράτα μόνο τα 12 πιο πρόσφατα
+        try:
+            rr = _rq.get(gif, timeout=15)
+            if rr.ok and 1000 < len(rr.content) < 8_000_000:
+                gif_bytes = rr.content
+        except Exception:
+            pass
     status = "ATTACH" if gif_bytes else ("LINK " + (gif or "")[:60] if gif else "ΟΧΙ")
     print(f"  [gif] {status}")
 
@@ -231,7 +245,8 @@ def scan_once(tracks_dir: str = TRACKS_DIR, source: str = "auto") -> None:
                     stolen_from = pl   # κλοπή κορυφής!
             try:
                 announce_record(track, pilot, t, is_new_top, group, cls or None,
-                                entry.get("model"), stolen_from=stolen_from)
+                                entry.get("model"), stolen_from=stolen_from,
+                                recent_gifs=state.setdefault("recent_gifs", []))
             except Exception as e:
                 # ΔΕΝ αποθηκεύουμε τον καλύτερο χρόνο -> θα ξανανιχνευθεί
                 # και θα ξανασταλεί στην επόμενη σάρωση (δεν χάνεται η ανακοίνωση)

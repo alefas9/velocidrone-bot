@@ -26,8 +26,10 @@ TENOR_KEY = os.environ.get("TENOR_API_KEY", "LIVDSRZULELA")
 
 
 def _from_giphy(query: str, key: str) -> str:
+    # random offset: αλλιώς η Giphy επιστρέφει συνέχεια τα ίδια δημοφιλή
     r = requests.get("https://api.giphy.com/v1/gifs/search", params={
         "api_key": key, "q": query, "limit": 25, "rating": "pg",
+        "offset": random.randint(0, 75),
     }, timeout=8)
     r.raise_for_status()
     data = r.json().get("data", [])
