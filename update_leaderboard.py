@@ -271,8 +271,10 @@ def scan_once(tracks_dir: str = TRACKS_DIR, source: str = "auto") -> None:
             for cls, group in groups.items():
                 if improved.get(cls or None) or improved.get(cls):
                     # mm -> tag στον κυνηγό: "σε κυνηγάει ο @Exo_FPV!"
-                    # ΟΛΕΣ οι σφιχτές μάχες (όχι μόνο η κορυφαία), με cooldown ανά ζευγάρι
-                    for teaser, chaser_id, tkey in proximity_teasers(group, templates=TEASER, mm=mm):
+                    # ΟΛΕΣ οι σφιχτές μάχες στο top-8 (όχι μόνο η κορυφαία),
+                    # με cooldown ανά ζευγάρι
+                    for teaser, chaser_id, tkey in proximity_teasers(group, templates=TEASER, mm=mm,
+                                                                      chaser_rank_threshold=8):
                         if not teaser:
                             continue
                         age = None
