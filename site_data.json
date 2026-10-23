@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-10-23T23:10:02.888299",
+  "generated_at": "2026-10-23T23:15:02.951143",
   "season": 2026,
   "current_track": "SimRushWeek3",
   "current_leaderboard": {
@@ -35,14 +35,14 @@
         "quad": "Five33 Switchback"
       },
       {
+        "pilot": "dimbazus",
+        "time": 65.633,
+        "quad": "Bahamut"
+      },
+      {
         "pilot": "Agorastos",
         "time": 67.587,
         "quad": "Carbix Zero"
-      },
-      {
-        "pilot": "dimbazus",
-        "time": 68.305,
-        "quad": "Bahamut"
       },
       {
         "pilot": "Liapos",
@@ -355,7 +355,7 @@
       "created_at": "2026-10-23T14:50:02.563674",
       "deadline": "2026-10-24T14:50:02.563713",
       "best_time_a": null,
-      "best_time_b": 68.305,
+      "best_time_b": 65.633,
       "resolved": false
     },
     {
