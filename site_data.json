@@ -1,17 +1,17 @@
 {
-  "generated_at": "2026-10-23T21:00:02.783193",
+  "generated_at": "2026-10-23T21:05:02.388080",
   "season": 2026,
   "current_track": "SimRushWeek3",
   "current_leaderboard": {
     "5inch": [
       {
-        "pilot": "ZOUP",
-        "time": 40.373,
+        "pilot": "Exo_FPV",
+        "time": 39.312,
         "quad": "Bahamut"
       },
       {
-        "pilot": "Exo_FPV",
-        "time": 40.597,
+        "pilot": "ZOUP",
+        "time": 40.373,
         "quad": "Bahamut"
       },
       {
@@ -359,7 +359,7 @@
       "track": "SimRushWeek3",
       "created_at": "2026-10-23T14:50:04.221342",
       "deadline": "2026-10-24T14:50:04.221380",
-      "best_time_a": null,
+      "best_time_a": 39.312,
       "best_time_b": null,
       "resolved": false
     }
