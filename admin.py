@@ -80,14 +80,15 @@ def _award_and_announce(track: str, state, force: bool = False) -> list:
     potw = points.pilot_of_the_week(state, track, prev_track)
     if potw:
         pilot, imp, tp, tn = potw
-        from whitelist import mention_map, to_mention
+        from whitelist import mention_map
         mm = mention_map()
-        potw_label = to_mention(pilot, mm)      # <@id> αν υπάρχει στη whitelist
+        # ΣΗΜΑΝΤΙΚΟ: τα <@id> ΔΕΝ αποδίδονται μέσα σε embed - φαίνονται σαν κείμενο.
+        # Οπότε: καθαρό όνομα με bold στο embed + αόρατο ping μέσω mentions=.
         potw_id = mm.get(pilot.lower())
         send_discord_embed(
             title="🌟 Πιλότος της εβδομάδας",
             description=(
-                f"{potw_label} — μεγαλύτερη βελτίωση σεζόν: "
+                f"**{pilot}** — μεγαλύτερη βελτίωση σεζόν: "
                 f"**{imp:+.1f}%** ({tp:.3f}s → {tn:.3f}s)\n"
                 f"Σε σχέση με την προηγούμενη εβδομάδα ({prev_track})"
             ),
@@ -137,6 +138,35 @@ def cmd_duel_preview(args) -> None:
         gap_txt = f"{gap:.3f}s" if isinstance(gap, (int, float)) else "—"
         status = "ΠΡΟΤΑΘΗΚΕ ✅" if v.get("suggested") else "παρακολούθηση ⏳"
         print(f"{a} vs {b} @ «{track}» — απόσταση {gap_txt} — {status}")
+
+
+def cmd_msg_stats(args) -> None:
+    """Στατιστικά χρήσης των message templates (ποια παίζουν/ποια όχι)."""
+    import json, os
+    if not os.path.exists("state.json"):
+        print("Δεν υπάρχει state.json.")
+        return
+    s = json.load(open("state.json", encoding="utf-8"))
+    stats = s.get("msg_stats", {})
+    if not stats:
+        print("Καμία καταγραφή ακόμα — θα γεμίσει μετά από λίγα ρεκόρ.")
+        return
+    import messages
+    MAP = {"NEW_TOP": messages.NEW_TOP, "PERSONAL": messages.PERSONAL,
+           "CROWN": messages.CROWN_THEFT}
+    pools = {}
+    for k, v in stats.items():
+        pool, idx = k.rsplit(":", 1)
+        pools.setdefault(pool, {})[int(idx)] = v
+    for pool, items in sorted(pools.items()):
+        lst = MAP.get(pool, [])
+        total = sum(items.values())
+        print(f"\n=== {pool} ({total} χρήσεις / {len(lst)} templates) ===")
+        for idx, cnt in sorted(items.items(), key=lambda kv: -kv[1])[:8]:
+            print(f"  {cnt:>4}x  #{idx}: {lst[idx][:65]}")
+        never = [i for i in range(len(lst)) if i not in items]
+        if never:
+            print(f"  ΠΟΤΕ δεν εστάλησαν ({len(never)}): indices {never[:12]}")
 
 
 def cmd_duel_list(args) -> None:
@@ -544,6 +574,9 @@ def main() -> None:
 
     dpr = sub.add_parser("duel-preview", help="κόντρες υπό παρακολούθηση (χωρίς Discord)")
     dpr.set_defaults(func=cmd_duel_preview)
+
+    ms = sub.add_parser("msg-stats", help="στατιστικά χρήσης μηνυμάτων (ποια παίζουν πολύ/καθόλου)")
+    ms.set_defaults(func=cmd_msg_stats)
 
     dc = sub.add_parser("duel-cancel", help="ακύρωση duel (διαγράφει ΟΛΑ τα duels του ζευγαριού)")
     dc.add_argument("pilot_a")
