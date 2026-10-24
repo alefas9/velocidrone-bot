@@ -1,71 +1,8 @@
 {
-  "generated_at": "2026-10-24T20:55:03.156948",
+  "generated_at": "2026-10-24T21:00:03.037275",
   "season": 2026,
-  "current_track": "SimRushWeek3",
-  "current_leaderboard": {
-    "5inch": [
-      {
-        "pilot": "Exo_FPV",
-        "time": 39.312,
-        "quad": "Bahamut"
-      },
-      {
-        "pilot": "ZOUP",
-        "time": 40.165,
-        "quad": "Bahamut"
-      },
-      {
-        "pilot": "TettixPro",
-        "time": 42.241,
-        "quad": "Carbix Zero"
-      },
-      {
-        "pilot": "DedalosFPV",
-        "time": 48.537,
-        "quad": "Bahamut"
-      },
-      {
-        "pilot": "Cbeikos",
-        "time": 56.123,
-        "quad": "Five33 Switchback"
-      },
-      {
-        "pilot": "tomahok",
-        "time": 63.578,
-        "quad": "Five33 Switchback"
-      },
-      {
-        "pilot": "dimbazus",
-        "time": 65.008,
-        "quad": "Bahamut"
-      },
-      {
-        "pilot": "Agorastos",
-        "time": 67.587,
-        "quad": "Carbix Zero"
-      },
-      {
-        "pilot": "Liapos",
-        "time": 73.075,
-        "quad": "Bahamut"
-      },
-      {
-        "pilot": "Torque72",
-        "time": 110.281,
-        "quad": "Five33 Switchback"
-      },
-      {
-        "pilot": "fpvchucky",
-        "time": 149.462,
-        "quad": "Carbix Zero"
-      },
-      {
-        "pilot": "Bakarim",
-        "time": 272.859,
-        "quad": "TBS Oblivion"
-      }
-    ]
-  },
+  "current_track": "SimRushWeek-4",
+  "current_leaderboard": {},
   "season_standings": {
     "5inch": [
       {
