@@ -1,8 +1,16 @@
 {
-  "generated_at": "2026-10-25T04:00:02.878637",
+  "generated_at": "2026-10-25T04:05:02.928518",
   "season": 2026,
   "current_track": "SimRushWeek-4",
-  "current_leaderboard": {},
+  "current_leaderboard": {
+    "5inch": [
+      {
+        "pilot": "Exo_FPV",
+        "time": 89.627,
+        "quad": "Bahamut"
+      }
+    ]
+  },
   "season_standings": {
     "5inch": [
       {
