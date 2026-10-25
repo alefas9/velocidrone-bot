@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-10-26T01:40:02.980882",
+  "generated_at": "2026-10-26T01:45:04.428063",
   "season": 2026,
   "current_track": "SimRushWeek-4",
   "current_leaderboard": {
@@ -38,6 +38,11 @@
         "pilot": "Liapos",
         "time": 153.152,
         "quad": "Bahamut"
+      },
+      {
+        "pilot": "Torque72",
+        "time": 297.671,
+        "quad": "Five33 Switchback"
       }
     ]
   },
