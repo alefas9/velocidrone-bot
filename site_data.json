@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-10-29T23:45:02.772950",
+  "generated_at": "2026-10-29T23:50:02.835395",
   "season": 2026,
   "current_track": "SimRushWeek-4",
   "current_leaderboard": {
@@ -40,14 +40,14 @@
         "quad": "Bahamut"
       },
       {
+        "pilot": "Agorastos",
+        "time": 200.075,
+        "quad": "Carbix Zero"
+      },
+      {
         "pilot": "Torque72",
         "time": 214.556,
         "quad": "Five33 Switchback"
-      },
-      {
-        "pilot": "Agorastos",
-        "time": 222.813,
-        "quad": "Carbix Zero"
       },
       {
         "pilot": "Gaston_FPV",
