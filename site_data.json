@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-10-31T20:50:02.348009",
+  "generated_at": "2026-10-31T20:55:02.583831",
   "season": 2026,
   "current_track": "SimRush-Week5",
   "current_leaderboard": {
@@ -10,8 +10,13 @@
         "quad": "Five33 Switchback"
       },
       {
+        "pilot": "Agorastos",
+        "time": 81.201,
+        "quad": "Carbix Zero"
+      },
+      {
         "pilot": "Bakarim",
-        "time": 162.076,
+        "time": 145.299,
         "quad": "TBS Oblivion"
       }
     ]
