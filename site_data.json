@@ -1,61 +1,8 @@
 {
-  "generated_at": "2026-10-31T20:40:02.366767",
+  "generated_at": "2026-10-31T20:45:02.449529",
   "season": 2026,
-  "current_track": "SimRushWeek-4",
-  "current_leaderboard": {
-    "5inch": [
-      {
-        "pilot": "ZOUP",
-        "time": 76.192,
-        "quad": "Bahamut"
-      },
-      {
-        "pilot": "Exo_FPV",
-        "time": 77.595,
-        "quad": "Bahamut"
-      },
-      {
-        "pilot": "TettixPro",
-        "time": 90.149,
-        "quad": "Five33 Switchback"
-      },
-      {
-        "pilot": "DedalosFPV",
-        "time": 93.657,
-        "quad": "Bahamut"
-      },
-      {
-        "pilot": "Cbeikos",
-        "time": 115.225,
-        "quad": "Five33 Switchback"
-      },
-      {
-        "pilot": "dimbazus",
-        "time": 134.78,
-        "quad": "Bahamut"
-      },
-      {
-        "pilot": "Liapos",
-        "time": 150.967,
-        "quad": "Bahamut"
-      },
-      {
-        "pilot": "Agorastos",
-        "time": 188.394,
-        "quad": "Carbix Zero"
-      },
-      {
-        "pilot": "Torque72",
-        "time": 214.556,
-        "quad": "Five33 Switchback"
-      },
-      {
-        "pilot": "Gaston_FPV",
-        "time": 314.214,
-        "quad": "Five33 Switchback"
-      }
-    ]
-  },
+  "current_track": "SimRush-Week5",
+  "current_leaderboard": {},
   "season_standings": {
     "5inch": [
       {
